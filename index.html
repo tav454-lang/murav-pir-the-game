@@ -598,37 +598,73 @@ function track(title, bpm, unit, wave, text) {
   }
   return { title, bpm, wave, ev, len: t };
 }
-const ENT1 = 'D4 D#4 E4 C5:2 E4 C5:2 E4 C5:7 C5 D5 D#5 E5 C5 D5 E5:2 B4 D5:2 C5:6 r:2';
-const ENT2 = 'D4 D#4 E4 C5:2 E4 C5:2 E4 C5:7 A4 G4 F#4 A4 C5 E5:2 D5 C5 A4 D5:6 r:2';
+// Whole pieces, all sections, one after another (public domain).
+const ENT_A1 = 'D4 D#4 E4 C5:2 E4 C5:2 E4 C5:7 C5 D5 D#5 E5 C5 D5 E5:2 B4 D5:2 C5:6 r:2';
+const ENT_A2 = 'D4 D#4 E4 C5:2 E4 C5:2 E4 C5:7 A4 G4 F#4 A4 C5 E5:2 D5 C5 A4 D5:6 r:2';
+const ENT_A3 = 'D4 D#4 E4 C5:2 E4 C5:2 E4 C5:7 C5 D5 E5 C5 D5 E5:2 C5 D5 C5 E5 C5 D5 E5:2 C5 D5 C5 E5 C5 D5 E5:2 B4 D5:2 C5:6 r:2';
+const ENT_B = 'E5 F5 F#5 G5:2 A5 G5:2 E5 F5 G5:2 F5 E5 D5 E5:2 C5 D5 E5 C5:4 r:2 ' +
+              'E5 F5 F#5 G5:2 A5 G5:2 E5 F5 G5:2 A5 B5 C6:2 B5 A5 G5:6 r:2';
+const ODE_A = 'E5:2 E5:2 F5:2 G5:2 G5:2 F5:2 E5:2 D5:2 C5:2 C5:2 D5:2 E5:2';
+const FUR_A = 'E5 D#5 E5 D#5 E5 B4 D5 C5 A4:3 C4 E4 A4 B4:3 E4 G#4 B4 C5:3 E4 E5 D#5 ' +
+              'E5 D#5 E5 B4 D5 C5 A4:3 C4 E4 A4 B4:3 E4 C5 B4 A4:3';
+const FUR_B = 'B4 C5 D5 E5:3 G4 F5 E5 D5:3 F4 E5 D5 C5:3 E4 D5 C5 B4:3 E4 E4 E5 E4 E5 E5 E6 D#5 E5 D#5 E5 D#5 ';
+const MK = 'A4 B4 C5 D5 E5 C5 E5:2 D#5 B4 D#5:2 D5 A#4 D5:2 A4 B4 C5 D5 E5 C5 E5 A5 G5 E5 C5 E5 G5:4 ';
+const TUR_A = 'B4 A4 G#4 A4 C5:4 D5 C5 B4 C5 E5:4 F5 E5 D#5 E5 B5 A5 G#5 A5 B5 A5 G#5 A5 C6:8 ' +
+              'A5:2 C6:2 B5:2 A5:2 G5:2 A5:2 B5:2 A5:2 G5:2 A5:2 B5:2 A5:2 G5:2 F#5:2 E5:4 ';
+const TUR_B = 'E5:2 F5:2 G5:2 G5:2 A5 G5 F5 E5 D5:4 E5:2 F5:2 G5:2 G5:2 A5 G5 F5 E5 D5:4 ' +
+              'C5:2 D5:2 E5:2 E5:2 F5 E5 D5 C5 B4:4 C5:2 D5:2 E5:2 E5:2 F5 E5 D5 C5 B4:4 ';
+const MIN_A = 'D5:2 G4 A4 B4 C5 D5:2 G4:2 G4:2 E5:2 C5 D5 E5 F#5 G5:2 G4:2 G4:2 C5:2 D5 C5 B4 A4 B4:2 C5 B4 A4 G4 ';
+const MIN_B = 'B5:2 G5 A5 B5 G5 A5:2 D5 E5 F#5 D5 G5:2 E5 F#5 G5 D5 C#5:2 B4 C#5 A4:2 ' +
+              'A4 B4 C#5 D5 E5 F#5 G5:2 F#5:2 E5:2 F#5:2 A4:2 C#5:2 D5:6 ' +
+              'D5:2 G4 F#4 G4:2 E5:2 G4 F#4 G4:2 D5:2 C5:2 B4:2 A4 G4 F#4 G4 A4:2 D4 E4 F#4 G4 A4 B4 C5:2 B4:2 A4:2 B4 D5 G4:2 F#4:2 G4:6 ';
+const NACHT = 'G4:2 r D4 G4:2 r D4 G4 D4 G4 B4 D5:4 C5:2 r A4 C5:2 r A4 C5 A4 F#4 A4 D4:4 ' +
+              'G4:2 G4:2 B4 A4 G4 G4 G4 F#4 F#4:2 A4 C5 F#4 A4 G4:4 r:2 ' +
+              'G4 G4 B4 A4 G4 G4 G4 F#4 F#4:2 A4 C5 F#4 A4 G4:4 r:2 ' +
+              'D5:2 C5 B4 C5 B4 A4 G4 G4 F#4 F#4:2 A4 C5 F#4 A4 G4:6 r:2 ';
+const KOR_A = 'E5:2 B4 C5 D5:2 C5 B4 A4:2 A4 C5 E5:2 D5 C5 B4:3 C5 D5:2 E5:2 C5:2 A4:2 A4:2 r:2 ';
+const KOR_B = 'r D5:2 F5 A5:2 G5 F5 E5:3 C5 E5:2 D5 C5 B4:2 B4 C5 D5:2 E5:2 C5:2 A4:2 A4:2 r:2 ';
 const TRACKS = [
-  track('Джоплин — «Артист эстрады»', 92, 1, 'triangle', [ENT1, ENT2, ENT1, ENT1].join(' ')),
-  track('Коробейники', 140, 2, 'square',
-    'E5:2 B4 C5 D5:2 C5 B4 A4:2 A4 C5 E5:2 D5 C5 B4:3 C5 D5:2 E5:2 C5:2 A4:2 A4:2 r:2 ' +
-    'r D5:2 F5 A5:2 G5 F5 E5:3 C5 E5:2 D5 C5 B4:2 B4 C5 D5:2 E5:2 C5:2 A4:2 A4:2 r:2'),
+  track('Джоплин — «Артист эстрады»', 92, 1, 'triangle', [ENT_A1, ENT_A2, ENT_A1, ENT_A3, ENT_B, ENT_B, ENT_A1, ENT_A2, ENT_A1, ENT_A3].join(' ')),
+  track('Коробейники', 140, 2, 'square', KOR_A + KOR_A + KOR_B + KOR_B + KOR_A + KOR_B),
   track('Бетховен — «Ода к радости»', 116, 2, 'triangle',
-    'E5:2 E5:2 F5:2 G5:2 G5:2 F5:2 E5:2 D5:2 C5:2 C5:2 D5:2 E5:2 E5:3 D5 D5:4 ' +
-    'E5:2 E5:2 F5:2 G5:2 G5:2 F5:2 E5:2 D5:2 C5:2 C5:2 D5:2 E5:2 D5:3 C5 C5:4'),
-  track('Бетховен — «К Элизе»', 132, 2, 'sine',
-    'E5 D#5 E5 D#5 E5 B4 D5 C5 A4:3 C4 E4 A4 B4:3 E4 G#4 B4 C5:3 E4 ' +
-    'E5 D#5 E5 D#5 E5 B4 D5 C5 A4:3 C4 E4 A4 B4:3 E4 C5 B4 A4:4 r:2'),
-  track('Григ — «В пещере горного короля»', 150, 2, 'square',
-    'A4 B4 C5 D5 E5 C5 E5:2 D#5 B4 D#5:2 D5 A#4 D5:2 A4 B4 C5 D5 E5 C5 E5 A5 G5 E5 C5 E5 G5:4 ' +
-    'A4 B4 C5 D5 E5 C5 E5:2 D#5 B4 D#5:2 D5 A#4 D5:2 A4 B4 C5 D5 E5 C5 E5 A5 G5 E5 C5 E5 A5:4'),
-  track('Моцарт — «Маленькая ночная серенада»', 128, 2, 'triangle',
-    'G4:2 r D4 G4:2 r D4 G4 D4 G4 B4 D5:4 C5:2 r A4 C5:2 r A4 C5 A4 F#4 A4 D4:4 ' +
-    'G4:2 G4:2 B4 A4 G4 G4 G4 F#4 F#4:2 A4 C5 F#4 A4 G4:4 r:4'),
-  track('Моцарт — «Турецкий марш»', 120, 1, 'triangle',
-    'B4 A4 G#4 A4 C5:4 D5 C5 B4 C5 E5:4 F5 E5 D#5 E5 B5 A5 G#5 A5 B5 A5 G#5 A5 C6:8 ' +
-    'A5:2 C6:2 B5:2 A5:2 G5:2 A5:2 B5:2 A5:2 G5:2 A5:2 B5:2 A5:2 G5:2 F#5:2 E5:4'),
+    ODE_A + ' E5:3 D5 D5:4 ' + ODE_A + ' D5:3 C5 C5:4 ' +
+    'D5:2 D5:2 E5:2 C5:2 D5:2 E5 F5 E5:2 C5:2 D5:2 E5 F5 E5:2 D5:2 C5:2 D5:2 G4:4 ' +
+    ODE_A + ' D5:3 C5 C5:4'),
+  track('Бетховен — «К Элизе»', 132, 2, 'sine', FUR_A + ' r:2 ' + FUR_A + ' ' + FUR_B + FUR_A + ' r:2 ' + FUR_A + ' r:4'),
+  Object.assign(track('Григ — «В пещере горного короля»', 120, 2, 'square', MK.repeat(8)), { accel: 1.1 }),
+  track('Моцарт — «Маленькая ночная серенада»', 128, 2, 'triangle', NACHT),
+  track('Моцарт — «Турецкий марш»', 120, 1, 'triangle', TUR_A + TUR_A + TUR_B + TUR_A),
   track('Петцольд — «Менуэт соль мажор»', 120, 2, 'triangle',
-    'D5:2 G4 A4 B4 C5 D5:2 G4:2 G4:2 E5:2 C5 D5 E5 F#5 G5:2 G4:2 G4:2 ' +
-    'C5:2 D5 C5 B4 A4 B4:2 C5 B4 A4 G4 F#4:2 G4 A4 B4 G4 A4:6'),
+    MIN_A + 'A4:2 B4 A4 G4 F#4 G4:6 ' + MIN_A + 'A4:2 B4 A4 G4 F#4 G4:6 ' + MIN_B + MIN_B),
+  track('Оффенбах — «Канкан»', 150, 2, 'square', (
+    'C5 D5 F5 E5 D5 G5:2 G5:2 G5:2 G5 A5 E5 F5 D5:2 D5:2 D5:2 D5 F5 E5 D5 C5 C6 B5 A5 G5 F5 E5 D5 C5:2 r:2 ' +
+    'C5 D5 F5 E5 D5 G5:2 G5:2 G5:2 G5 A5 E5 F5 D5:2 D5:2 D5:2 D5 G5 E5 F5 D5 G5 E5 F5 D5 G5 E5 F5 C5:4 r:2 ').repeat(2)),
+  track('Григ — «Утро»', 84, 2, 'sine',
+    'G5 E5 D5 C5 D5 E5 G5 E5 D5 C5 D5 E5 D5 E5 G5 E5 G5 A5 E5 A5 G5 E5 D5 C5:4 r:2 ' +
+    'G5 E5 D5 C5 D5 E5 G5 E5 D5 C5 D5 E5 D5 E5 G5 E5 G5 A5 E5 A5 G5 E5 D5 C5:4 r:2 ' +
+    'A5 F5 E5 D5 E5 F5 A5 F5 E5 D5 E5 F5 E5 F5 A5 F5 A5 B5 F5 B5 A5 F5 E5 D5:4 r:2 ' +
+    'G5 E5 D5 C5 D5 E5 G5 E5 D5 C5 D5 E5 D5 E5 G5 E5 G5 A5 E5 A5 G5 E5 D5 C5:6 r:4'),
+  track('Бах — «Шутка»', 132, 1, 'triangle', (
+    'B5:2 D6 B5 F#5:2 B5 F#5 D5:2 F#5 D5 B4:4 F#4 B4 D5 B4 C#5 B4 C#5 B4 A#4 C#5 E5 C#5 D5:2 B4:2 ' +
+    'B5:2 D6 B5 F#5:2 B5 F#5 D5:2 F#5 D5 B4:4 D5 C#5 B4 A#4 B4 C#5 D5 E5 F#5 E5 D5 C#5 B4:4 r:2 ').repeat(2)),
+  track('Брамс — «Колыбельная»', 96, 2, 'sine',
+    'E5 E5 G5:3 E5 E5 G5:3 E5 G5 C6:2 B5:2 A5:2 A5 G5 D5 E5 F5:2 D5:2 D5 E5 F5:3 D5 F5 B5 A5 G5:2 B5:2 C6:4 ' +
+    'C5 C5 C6:4 A5 F5 G5:4 E5 C5 F5:2 G5:2 A5:2 G5:4 C5 C5 C6:4 A5 F5 G5:4 E5 C5 F5 E5 D5 C5:6 r:4'),
+  track('Россини — «Вильгельм Телль»', 152, 1, 'square', (
+    'E5 E5 E5:2 E5 E5 E5:2 E5 E5 A5:2 B5:2 C6:2 E5 E5 E5:2 E5 E5 A5:2 C6 A5 B5:2 G5:2 ' +
+    'E5 E5 E5:2 E5 E5 E5:2 E5 E5 A5:2 B5:2 C6:2 A5 C6 E6:4 D6:2 B5:2 G5:2 A5:4 r:2 ').repeat(2)),
+  track('Штраус — «На прекрасном голубом Дунае»', 150, 4, 'triangle',
+    'C4 C4 E4 G4 G4:2 r G5 G5:2 r E5 E5:2 r C4 C4 E4 G4 G4:2 r G5 G5:2 r F5 F5:2 r ' +
+    'B3 B3 D4 A4 A4:2 r A5 A5:2 r F5 F5:2 r B3 B3 D4 A4 A4:2 r A5 A5:2 r E5 E5:2 r ' +
+    'C4 C4 E4 G4 C5:2 r C6 C6:2 r G5 G5:2 r C4 C4 E4 G4 C5:2 r C6 C6:2 r A5 A5:2 r ' +
+    'D5 D5 F5 A5:3 A5:2 F5 F#5 G5:3 E6:2 C6 E5 E5:2 D5 A5:2 G5 C5:3 r:3'),
+  track('Бизе — «Хабанера»', 100, 2, 'triangle', (
+    'D5:3 C#5 C5:2 B4:2 B4 B4 A#4 A4:2 G#4:2 G4 F4 G4 F4 E4:4 r:2 ' +
+    'A4:3 G#4 G4:2 F#4:2 F#4 F#4 F4 E4:2 D#4:2 D4 C4 D4 C4 B3:4 r:2 ').repeat(2)),
 ];
 const BEE = track('Римский-Корсаков — «Полёт шмеля»', 168, 1, 'sawtooth',
   'E5 D#5 D5 C#5 D5 C#5 C5 B4 C5 C#5 D5 D#5 E5 F5 E5 D#5 E5 D#5 D5 C#5 D5 C#5 C5 B4 A4 B4 C5 C#5 D5 D#5 E5 E5');
-// The music develops: every pass through a tune adds or changes something
-// (harmony, drums, arpeggios, a key change), and after a few passes it moves
-// on to the next tune, so a long level becomes a medley instead of a loop.
+// Each piece plays through in full; then the next one starts.
 const MUS = { song: null, idx: -1, step: 0, next: 0, timer: 0, gain: null, noise: null };
 function startMusic(song) {
   if (MUS.song === song && MUS.timer) return;
@@ -664,51 +700,32 @@ function kick(t, vol) {
   o.connect(gn).connect(MUS.gain); o.start(t); o.stop(t + 0.18);
 }
 const WAVEVOL = { triangle: 0.05, sine: 0.06, square: 0.018, sawtooth: 0.02 };
-const PASSES = 4;                                     // passes per tune before the medley moves on
 function musicTick() {
   const a = AC; if (!a || !MUS.song) return;
   while (MUS.next < a.currentTime + 0.3) {
     const song = MUS.song, bee = song === BEE;
-    const pass = Math.floor(MUS.step / song.len), s = MUS.step % song.len, t = MUS.next;
-    const six = 60 / song.bpm / 4 * (bee ? 1 : (pass === PASSES - 1 ? 0.94 : 1));   // last pass pushes a little
-    const v = bee ? 1 : pass % PASSES;
-    const key = !bee && v === 3 ? Math.pow(2, 2 / 12) : 1;                           // lift by a tone on pass 4
+    const s = MUS.step, t = MUS.next;
+    const speed = 1 + (song.accel || 0) * s / song.len;      // Grieg speeds up as it goes
+    const six = 60 / (song.bpm * speed) / 4;
     let first = null;
-    for (const [at, f0, len] of song.ev) {
-      const f = f0 * key;
+    for (const [at, f, len] of song.ev) {
       if (at === s) {
         const dur = Math.max(0.09, len * six * 0.92);
-        if (v === 2) {                                 // pass 3: melody an octave up, bell-like
-          mnote(f * 2, t, Math.min(dur, 0.35), 'sine', 0.045);
-          mnote(f * 4, t, 0.08, 'sine', 0.008);
-        } else {
-          mnote(f, t, dur, song.wave, WAVEVOL[song.wave]);
-          if (!bee) mnote(f * 2, t, Math.min(0.18, len * six * 0.5), 'sine', 0.01);
-        }
-        if (v >= 1 && !bee) mnote(f * Math.pow(2, -4 / 12), t, dur * 0.9, 'triangle', 0.022);   // harmony a third below
+        const loud = song.accel ? 0.7 + 0.6 * s / song.len : 1;
+        mnote(f, t, dur, song.wave, WAVEVOL[song.wave] * loud);
+        if (!bee) mnote(f * 2, t, Math.min(0.18, len * six * 0.5), 'sine', 0.01);
       }
       if (first === null && at >= s - (s % 8) && at < s - (s % 8) + 8) first = f;
     }
     if (first) {
-      if (v === 0) {                                   // pass 1: plain left hand
-        if (s % 8 === 0) mnote(first / 4, t, six * 3, 'sine', bee ? 0.045 : 0.06);
-        if (!bee && s % 8 === 4) [1, 1.26, 1.5].forEach(r => mnote(first / 2 * r, t, six * 1.4, 'triangle', 0.01));
-      } else if (v === 2) {                            // pass 3: rolling arpeggio
-        if (s % 2 === 0) mnote(first / 2 * [1, 1.26, 1.5, 2][(s / 2) % 4], t, six * 1.8, 'triangle', 0.02);
-        if (s % 8 === 0) mnote(first / 4, t, six * 6, 'sine', 0.05);
-      } else {                                         // passes 2 and 4: walking bass
-        if (s % 4 === 0) mnote(first / 4 * [1, 1.5, 1.68, 1.5][(s / 4) % 4], t, six * 3.4, 'sine', 0.065);
-        if (!bee && s % 8 === 4) [1, 1.26, 1.5].forEach(r => mnote(first / 2 * r, t, six * 1.2, 'triangle', 0.012));
-      }
+      if (s % 8 === 0) mnote(first / 4, t, six * 3, 'sine', bee ? 0.045 : 0.06);
+      if (!bee && s % 8 === 4) [1, 1.26, 1.5].forEach(r => mnote(first / 2 * r, t, six * 1.4, 'triangle', 0.01));
     }
-    if (bee || v >= 1) {                               // drums join from pass 2
-      if (s % 8 === 0) kick(t, bee ? 0.12 : 0.1);
-      if (s % 2 === 0) hat(t, s % 4 === 2 ? 0.035 : 0.018);
-      if (v === 3 && s % 8 === 4) kick(t, 0.06);
-    }
+    if (bee && s % 8 === 0) kick(t, 0.1);
     MUS.next += six; MUS.step++;
-    if (!bee && MUS.step >= song.len * PASSES) {      // medley: next tune
-      MUS.idx = (MUS.idx + 1) % TRACKS.length; MUS.song = TRACKS[MUS.idx]; MUS.step = 0;
+    if (MUS.step >= song.len) {
+      MUS.step = 0;
+      if (!bee) { MUS.idx = (MUS.idx + 1) % TRACKS.length; MUS.song = TRACKS[MUS.idx]; MUS.next += 0.6; }   // short pause, then the next piece
     }
   }
 }
