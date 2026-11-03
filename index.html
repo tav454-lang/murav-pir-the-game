@@ -623,44 +623,46 @@ const NACHT = 'G4:2 r D4 G4:2 r D4 G4 D4 G4 B4 D5:4 C5:2 r A4 C5:2 r A4 C5 A4 F#
               'D5:2 C5 B4 C5 B4 A4 G4 G4 F#4 F#4:2 A4 C5 F#4 A4 G4:6 r:2 ';
 const KOR_A = 'E5:2 B4 C5 D5:2 C5 B4 A4:2 A4 C5 E5:2 D5 C5 B4:3 C5 D5:2 E5:2 C5:2 A4:2 A4:2 r:2 ';
 const KOR_B = 'r D5:2 F5 A5:2 G5 F5 E5:3 C5 E5:2 D5 C5 B4:2 B4 C5 D5:2 E5:2 C5:2 A4:2 A4:2 r:2 ';
+// shift every note of a phrase by some semitones (for pieces that travel through keys)
+function tr(text, semis) {
+  const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  return text.trim().split(/\s+/).map(tok => {
+    const [n, l] = tok.split(':');
+    if (n === 'r') return tok;
+    const m = n.match(/^([A-G]#?)(\d)$/);
+    let k = names.indexOf(m[1]) + +m[2] * 12 + semis;
+    return names[k % 12] + Math.floor(k / 12) + (l ? ':' + l : '');
+  }).join(' ');
+}
+const MORNING = 'G5:2 E5:2 D5:2 C5:2 D5:2 E5:2 G5:2 E5:2 D5:2 C5:2 D5 E5 D5 E5 G5:2 E5:2 G5:2 A5:2 E5:2 A5:2 G5:2 E5:2 D5:2 C5:6 r:2';
+// Each piece in its own form, with its different sections; no phrase loops back-to-back.
 const TRACKS = [
-  track('Джоплин — «Артист эстрады»', 92, 1, 'triangle', [ENT_A1, ENT_A2, ENT_A1, ENT_A3, ENT_B, ENT_B, ENT_A1, ENT_A2, ENT_A1, ENT_A3].join(' ')),
-  track('Коробейники', 140, 2, 'square', KOR_A + KOR_A + KOR_B + KOR_B + KOR_A + KOR_B),
-  track('Бетховен — «Ода к радости»', 116, 2, 'triangle',
+  track('Джоплин — «Артист эстрады»', 80, 1, 'triangle', [ENT_A1, ENT_A2, ENT_A1, ENT_A3, ENT_B, ENT_A1, ENT_A2, ENT_A1, ENT_A3].join(' ')),
+  track('Бетховен — «К Элизе»', 100, 2, 'sine', FUR_A + ' r:2 ' + FUR_B + FUR_A + ' r:4'),
+  track('Бетховен — «Ода к радости»', 100, 2, 'triangle',
     ODE_A + ' E5:3 D5 D5:4 ' + ODE_A + ' D5:3 C5 C5:4 ' +
     'D5:2 D5:2 E5:2 C5:2 D5:2 E5 F5 E5:2 C5:2 D5:2 E5 F5 E5:2 D5:2 C5:2 D5:2 G4:4 ' +
-    ODE_A + ' D5:3 C5 C5:4'),
-  track('Бетховен — «К Элизе»', 132, 2, 'sine', FUR_A + ' r:2 ' + FUR_A + ' ' + FUR_B + FUR_A + ' r:2 ' + FUR_A + ' r:4'),
-  Object.assign(track('Григ — «В пещере горного короля»', 120, 2, 'square', MK.repeat(8)), { accel: 1.1 }),
-  track('Моцарт — «Маленькая ночная серенада»', 128, 2, 'triangle', NACHT),
-  track('Моцарт — «Турецкий марш»', 120, 1, 'triangle', TUR_A + TUR_A + TUR_B + TUR_A),
-  track('Петцольд — «Менуэт соль мажор»', 120, 2, 'triangle',
-    MIN_A + 'A4:2 B4 A4 G4 F#4 G4:6 ' + MIN_A + 'A4:2 B4 A4 G4 F#4 G4:6 ' + MIN_B + MIN_B),
-  track('Оффенбах — «Канкан»', 150, 2, 'square', (
-    'C5 D5 F5 E5 D5 G5:2 G5:2 G5:2 G5 A5 E5 F5 D5:2 D5:2 D5:2 D5 F5 E5 D5 C5 C6 B5 A5 G5 F5 E5 D5 C5:2 r:2 ' +
-    'C5 D5 F5 E5 D5 G5:2 G5:2 G5:2 G5 A5 E5 F5 D5:2 D5:2 D5:2 D5 G5 E5 F5 D5 G5 E5 F5 D5 G5 E5 F5 C5:4 r:2 ').repeat(2)),
-  track('Григ — «Утро»', 84, 2, 'sine',
-    'G5 E5 D5 C5 D5 E5 G5 E5 D5 C5 D5 E5 D5 E5 G5 E5 G5 A5 E5 A5 G5 E5 D5 C5:4 r:2 ' +
-    'G5 E5 D5 C5 D5 E5 G5 E5 D5 C5 D5 E5 D5 E5 G5 E5 G5 A5 E5 A5 G5 E5 D5 C5:4 r:2 ' +
-    'A5 F5 E5 D5 E5 F5 A5 F5 E5 D5 E5 F5 E5 F5 A5 F5 A5 B5 F5 B5 A5 F5 E5 D5:4 r:2 ' +
-    'G5 E5 D5 C5 D5 E5 G5 E5 D5 C5 D5 E5 D5 E5 G5 E5 G5 A5 E5 A5 G5 E5 D5 C5:6 r:4'),
-  track('Бах — «Шутка»', 132, 1, 'triangle', (
-    'B5:2 D6 B5 F#5:2 B5 F#5 D5:2 F#5 D5 B4:4 F#4 B4 D5 B4 C#5 B4 C#5 B4 A#4 C#5 E5 C#5 D5:2 B4:2 ' +
-    'B5:2 D6 B5 F#5:2 B5 F#5 D5:2 F#5 D5 B4:4 D5 C#5 B4 A#4 B4 C#5 D5 E5 F#5 E5 D5 C#5 B4:4 r:2 ').repeat(2)),
-  track('Брамс — «Колыбельная»', 96, 2, 'sine',
-    'E5 E5 G5:3 E5 E5 G5:3 E5 G5 C6:2 B5:2 A5:2 A5 G5 D5 E5 F5:2 D5:2 D5 E5 F5:3 D5 F5 B5 A5 G5:2 B5:2 C6:4 ' +
-    'C5 C5 C6:4 A5 F5 G5:4 E5 C5 F5:2 G5:2 A5:2 G5:4 C5 C5 C6:4 A5 F5 G5:4 E5 C5 F5 E5 D5 C5:6 r:4'),
-  track('Россини — «Вильгельм Телль»', 152, 1, 'square', (
-    'E5 E5 E5:2 E5 E5 E5:2 E5 E5 A5:2 B5:2 C6:2 E5 E5 E5:2 E5 E5 A5:2 C6 A5 B5:2 G5:2 ' +
-    'E5 E5 E5:2 E5 E5 E5:2 E5 E5 A5:2 B5:2 C6:2 A5 C6 E6:4 D6:2 B5:2 G5:2 A5:4 r:2 ').repeat(2)),
+    ODE_A + ' D5:3 C5 C5:6 r:2'),
+  track('Григ — «Утро»', 72, 1, 'sine',
+    [MORNING, tr(MORNING, 4), tr(MORNING, 8), tr(MORNING, -3), MORNING, 'r:4'].join(' ')),
+  track('Моцарт — «Турецкий марш»', 108, 1, 'triangle', TUR_A + TUR_B + TUR_A + 'r:4'),
+  track('Коробейники', 120, 2, 'square', [KOR_A, KOR_B, tr(KOR_A, 5), tr(KOR_B, 5), KOR_A, 'r:2'].join(' ')),
+  track('Петцольд — «Менуэт соль мажор»', 108, 2, 'triangle',
+    MIN_A + 'A4:2 B4 A4 G4 F#4 G4:6 ' + MIN_B),
+  Object.assign(track('Григ — «В пещере горного короля»', 96, 2, 'square', [MK, MK, tr(MK, 5), tr(MK, 5), tr(MK, 7), tr(MK, 7), MK, MK, 'A5:8'].join(' ')), { accel: 1.3 }),
   track('Штраус — «На прекрасном голубом Дунае»', 150, 4, 'triangle',
     'C4 C4 E4 G4 G4:2 r G5 G5:2 r E5 E5:2 r C4 C4 E4 G4 G4:2 r G5 G5:2 r F5 F5:2 r ' +
     'B3 B3 D4 A4 A4:2 r A5 A5:2 r F5 F5:2 r B3 B3 D4 A4 A4:2 r A5 A5:2 r E5 E5:2 r ' +
     'C4 C4 E4 G4 C5:2 r C6 C6:2 r G5 G5:2 r C4 C4 E4 G4 C5:2 r C6 C6:2 r A5 A5:2 r ' +
     'D5 D5 F5 A5:3 A5:2 F5 F#5 G5:3 E6:2 C6 E5 E5:2 D5 A5:2 G5 C5:3 r:3'),
-  track('Бизе — «Хабанера»', 100, 2, 'triangle', (
-    'D5:3 C#5 C5:2 B4:2 B4 B4 A#4 A4:2 G#4:2 G4 F4 G4 F4 E4:4 r:2 ' +
-    'A4:3 G#4 G4:2 F#4:2 F#4 F#4 F4 E4:2 D#4:2 D4 C4 D4 C4 B3:4 r:2 ').repeat(2)),
+  track('Брамс — «Колыбельная»', 84, 2, 'sine',
+    'E5 E5 G5:3 E5 E5 G5:3 E5 G5 C6:2 B5:2 A5:2 A5 G5 D5 E5 F5:2 D5:2 D5 E5 F5:3 D5 F5 B5 A5 G5:2 B5:2 C6:4 ' +
+    'C5 C5 C6:4 A5 F5 G5:4 E5 C5 F5:2 G5:2 A5:2 G5:4 C5 C5 C6:4 A5 F5 G5:4 E5 C5 F5 E5 D5 C5:6 r:4'),
+  track('Моцарт — «Маленькая ночная серенада»', 120, 2, 'triangle', NACHT),
+  track('Оффенбах — «Канкан»', 140, 2, 'square',
+    'C5 D5 F5 E5 D5 G5:2 G5:2 G5:2 G5 A5 E5 F5 D5:2 D5:2 D5:2 D5 F5 E5 D5 C5 C6 B5 A5 G5 F5 E5 D5 C5:2 r:2 ' +
+    'C5 D5 F5 E5 D5 G5:2 G5:2 G5:2 G5 A5 E5 F5 D5:2 D5:2 D5:2 D5 G5 E5 F5 D5 G5 E5 F5 D5 G5 E5 F5 C5:4 r:2 ' +
+    ' ' + tr('C5 D5 F5 E5 D5 G5:2 G5:2 G5:2 G5 A5 E5 F5 D5:2 D5:2 D5:2 D5 G5 E5 F5 D5 G5 E5 F5 D5 G5 E5 F5 C5:4 r:4', 5)),
 ];
 const BEE = track('Римский-Корсаков — «Полёт шмеля»', 168, 1, 'sawtooth',
   'E5 D#5 D5 C#5 D5 C#5 C5 B4 C5 C#5 D5 D#5 E5 F5 E5 D#5 E5 D#5 D5 C#5 D5 C#5 C5 B4 A4 B4 C5 C#5 D5 D#5 E5 E5');
@@ -725,7 +727,7 @@ function musicTick() {
     MUS.next += six; MUS.step++;
     if (MUS.step >= song.len) {
       MUS.step = 0;
-      if (!bee) { MUS.idx = (MUS.idx + 1) % TRACKS.length; MUS.song = TRACKS[MUS.idx]; MUS.next += 0.6; }   // short pause, then the next piece
+      if (!bee) { MUS.idx = (MUS.idx + 1) % TRACKS.length; MUS.song = TRACKS[MUS.idx]; MUS.next += 2.2; }   // a breath, then the next piece
     }
   }
 }
