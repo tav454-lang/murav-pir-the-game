@@ -626,15 +626,22 @@ const TRACKS = [
 ];
 const BEE = track('Римский-Корсаков — «Полёт шмеля»', 168, 1, 'sawtooth',
   'E5 D#5 D5 C#5 D5 C#5 C5 B4 C5 C#5 D5 D#5 E5 F5 E5 D#5 E5 D#5 D5 C#5 D5 C#5 C5 B4 A4 B4 C5 C#5 D5 D#5 E5 E5');
-const MUS = { song: null, step: 0, next: 0, timer: 0, gain: null };
+// The music develops: every pass through a tune adds or changes something
+// (harmony, drums, arpeggios, a key change), and after a few passes it moves
+// on to the next tune, so a long level becomes a medley instead of a loop.
+const MUS = { song: null, idx: -1, step: 0, next: 0, timer: 0, gain: null, noise: null };
 function startMusic(song) {
   if (MUS.song === song && MUS.timer) return;
   stopMusic();
   if (!save.music || !song) return;
   const a = ctxAudio(); if (!a) return;
   if (!MUS.gain) { MUS.gain = a.createGain(); MUS.gain.connect(OUT); }
+  if (!MUS.noise) {
+    MUS.noise = a.createBuffer(1, a.sampleRate * 0.2, a.sampleRate);
+    const d = MUS.noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
   MUS.gain.gain.setValueAtTime(song === BEE ? 0.75 : 0.6, a.currentTime);
-  MUS.song = song; MUS.step = 0; MUS.next = a.currentTime + 0.12;
+  MUS.song = song; MUS.idx = TRACKS.indexOf(song); MUS.step = 0; MUS.next = a.currentTime + 0.12;
   MUS.timer = setInterval(musicTick, 50);
 }
 function stopMusic() { if (MUS.timer) clearInterval(MUS.timer); MUS.timer = 0; MUS.song = null; }
@@ -644,24 +651,65 @@ function mnote(freq, t, dur, type, vol) {
   gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(vol, t + 0.012); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(gn).connect(MUS.gain); o.start(t); o.stop(t + dur + 0.03);
 }
+function hat(t, vol) {
+  const a = AC, s = a.createBufferSource(), f = a.createBiquadFilter(), gn = a.createGain();
+  s.buffer = MUS.noise; f.type = 'highpass'; f.frequency.value = 7000;
+  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  s.connect(f).connect(gn).connect(MUS.gain); s.start(t); s.stop(t + 0.06);
+}
+function kick(t, vol) {
+  const a = AC, o = a.createOscillator(), gn = a.createGain();
+  o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+  o.connect(gn).connect(MUS.gain); o.start(t); o.stop(t + 0.18);
+}
 const WAVEVOL = { triangle: 0.05, sine: 0.06, square: 0.018, sawtooth: 0.02 };
+const PASSES = 4;                                     // passes per tune before the medley moves on
 function musicTick() {
-  const a = AC, song = MUS.song; if (!a || !song) return;
-  const six = 60 / song.bpm / 4;                     // one sixteenth note
+  const a = AC; if (!a || !MUS.song) return;
   while (MUS.next < a.currentTime + 0.3) {
-    const s = MUS.step % song.len, t = MUS.next;
+    const song = MUS.song, bee = song === BEE;
+    const pass = Math.floor(MUS.step / song.len), s = MUS.step % song.len, t = MUS.next;
+    const six = 60 / song.bpm / 4 * (bee ? 1 : (pass === PASSES - 1 ? 0.94 : 1));   // last pass pushes a little
+    const v = bee ? 1 : pass % PASSES;
+    const key = !bee && v === 3 ? Math.pow(2, 2 / 12) : 1;                           // lift by a tone on pass 4
     let first = null;
-    for (const [at, f, len] of song.ev) {
+    for (const [at, f0, len] of song.ev) {
+      const f = f0 * key;
       if (at === s) {
-        mnote(f, t, Math.max(0.09, len * six * 0.92), song.wave, WAVEVOL[song.wave]);
-        if (song.wave !== 'sawtooth') mnote(f * 2, t, Math.min(0.18, len * six * 0.5), 'sine', 0.01);
+        const dur = Math.max(0.09, len * six * 0.92);
+        if (v === 2) {                                 // pass 3: melody an octave up, bell-like
+          mnote(f * 2, t, Math.min(dur, 0.35), 'sine', 0.045);
+          mnote(f * 4, t, 0.08, 'sine', 0.008);
+        } else {
+          mnote(f, t, dur, song.wave, WAVEVOL[song.wave]);
+          if (!bee) mnote(f * 2, t, Math.min(0.18, len * six * 0.5), 'sine', 0.01);
+        }
+        if (v >= 1 && !bee) mnote(f * Math.pow(2, -4 / 12), t, dur * 0.9, 'triangle', 0.022);   // harmony a third below
       }
       if (first === null && at >= s - (s % 8) && at < s - (s % 8) + 8) first = f;
     }
-    // simple left hand: the bar's first melody note two octaves down, on beats 1 and 3
-    if (s % 8 === 0 && first) mnote(first / 4, t, six * 3, 'sine', song === BEE ? 0.045 : 0.06);
-    if (song !== BEE && s % 8 === 4 && first) [1, 1.26, 1.5].forEach(r => mnote(first / 2 * r, t, six * 1.4, 'triangle', 0.01));
+    if (first) {
+      if (v === 0) {                                   // pass 1: plain left hand
+        if (s % 8 === 0) mnote(first / 4, t, six * 3, 'sine', bee ? 0.045 : 0.06);
+        if (!bee && s % 8 === 4) [1, 1.26, 1.5].forEach(r => mnote(first / 2 * r, t, six * 1.4, 'triangle', 0.01));
+      } else if (v === 2) {                            // pass 3: rolling arpeggio
+        if (s % 2 === 0) mnote(first / 2 * [1, 1.26, 1.5, 2][(s / 2) % 4], t, six * 1.8, 'triangle', 0.02);
+        if (s % 8 === 0) mnote(first / 4, t, six * 6, 'sine', 0.05);
+      } else {                                         // passes 2 and 4: walking bass
+        if (s % 4 === 0) mnote(first / 4 * [1, 1.5, 1.68, 1.5][(s / 4) % 4], t, six * 3.4, 'sine', 0.065);
+        if (!bee && s % 8 === 4) [1, 1.26, 1.5].forEach(r => mnote(first / 2 * r, t, six * 1.2, 'triangle', 0.012));
+      }
+    }
+    if (bee || v >= 1) {                               // drums join from pass 2
+      if (s % 8 === 0) kick(t, bee ? 0.12 : 0.1);
+      if (s % 2 === 0) hat(t, s % 4 === 2 ? 0.035 : 0.018);
+      if (v === 3 && s % 8 === 4) kick(t, 0.06);
+    }
     MUS.next += six; MUS.step++;
+    if (!bee && MUS.step >= song.len * PASSES) {      // medley: next tune
+      MUS.idx = (MUS.idx + 1) % TRACKS.length; MUS.song = TRACKS[MUS.idx]; MUS.step = 0;
+    }
   }
 }
 
