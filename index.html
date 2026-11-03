@@ -565,14 +565,57 @@ const sfx = {
 
 // ---------- map ----------
 const pathEl = $('path'), svg = $('pathSvg');
+// small seeded random so the map looks hand-placed but never changes between visits
+function srand(i, k) { let h = (i * 374761393 + k * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+// little things that live along the road
+function decoSVG(kind, x, y, s, T, seed) {
+  const dk = T.dark;
+  switch (kind) {
+    case 'flower': {
+      const pc = ['#FF92BD', '#FFD23F', '#FFFFFF', '#93D6F7', '#C9A0FF'][seed % 5];
+      let p = `<path d="M${x} ${y + s * 1.6}V${y + s * 0.4}" stroke="${dk ? '#3F7A4E' : '#5E9C3C'}" stroke-width="1.4"/>`;
+      for (let k = 0; k < 5; k++) { const t = k * 1.2566; p += `<circle cx="${x + Math.cos(t) * s * 0.42}" cy="${y + Math.sin(t) * s * 0.42}" r="${s * 0.34}" fill="${pc}"/>`; }
+      return p + `<circle cx="${x}" cy="${y}" r="${s * 0.26}" fill="#FF8A1F"/>`;
+    }
+    case 'tuft': {
+      const c = dk ? '#3F7A4E' : T.blade;
+      return `<path d="M${x - s} ${y + s}q${s * 0.3} ${-s * 1.2} ${s * 0.2} ${-s * 1.8}M${x} ${y + s}q0 ${-s * 1.4} ${s * 0.1} ${-s * 2.1}M${x + s} ${y + s}q${-s * 0.3} ${-s * 1.1} ${s * 0.3} ${-s * 1.6}" stroke="${c}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+    }
+    case 'stone':
+      return `<ellipse cx="${x}" cy="${y}" rx="${s * 1.1}" ry="${s * 0.7}" fill="${dk ? '#4A5068' : '#B9B4AA'}"/><ellipse cx="${x - s * 0.3}" cy="${y - s * 0.25}" rx="${s * 0.4}" ry="${s * 0.2}" fill="rgba(255,255,255,.35)"/>`;
+    case 'shroom':
+      return `<rect x="${x - s * 0.25}" y="${y}" width="${s * 0.5}" height="${s * 0.9}" rx="${s * 0.15}" fill="#FFF6E6"/><path d="M${x - s} ${y + s * 0.1}a${s} ${s * 0.85} 0 0 1 ${s * 2} 0z" fill="#EF4438"/><circle cx="${x - s * 0.35}" cy="${y - s * 0.3}" r="${s * 0.17}" fill="#fff"/><circle cx="${x + s * 0.3}" cy="${y - s * 0.45}" r="${s * 0.13}" fill="#fff"/>`;
+    case 'hill':
+      return `<path d="M${x - s * 1.6} ${y + s * 0.6}q${s * 1.6} ${-s * 2.2} ${s * 3.2} 0z" fill="${dk ? '#5B4636' : '#B98D5E'}"/><ellipse cx="${x}" cy="${y - s * 0.15}" rx="${s * 0.32}" ry="${s * 0.2}" fill="${dk ? '#241911' : '#5A3D28'}"/>`;
+    case 'crumbs': {
+      const cols = ['#EF4438', '#FFD23F', '#63C04A', '#3B7FE0', '#FF92BD'];
+      let p = '';
+      for (let k = 0; k < 4; k++) p += `<rect x="${x + (srand(seed, k) - 0.5) * s * 3}" y="${y + (srand(seed, k + 9) - 0.5) * s * 1.6}" width="${s * 0.5}" height="${s * 0.5}" fill="${cols[(seed + k) % 5]}" opacity=".85"/>`;
+      return p;
+    }
+    case 'bush': {
+      const c1 = dk ? '#2F5A3C' : '#6FAE4C', c2 = dk ? '#3F7A4E' : '#86C463';
+      return `<circle cx="${x - s * 0.9}" cy="${y + s * 0.2}" r="${s * 0.9}" fill="${c1}"/><circle cx="${x + s * 0.9}" cy="${y + s * 0.2}" r="${s * 0.85}" fill="${c1}"/><circle cx="${x}" cy="${y - s * 0.3}" r="${s * 1.1}" fill="${c2}"/><circle cx="${x + s * 0.4}" cy="${y - s * 0.2}" r="${s * 0.18}" fill="#EF4438"/><circle cx="${x - s * 0.5}" cy="${y + s * 0.1}" r="${s * 0.18}" fill="#EF4438"/>`;
+    }
+    case 'puddle':
+      return `<ellipse cx="${x}" cy="${y}" rx="${s * 1.9}" ry="${s * 0.8}" fill="${dk ? '#2B4A6B' : '#A9D8F2'}"/><ellipse cx="${x - s * 0.6}" cy="${y - s * 0.2}" rx="${s * 0.6}" ry="${s * 0.18}" fill="rgba(255,255,255,.55)"/>`;
+    case 'leaf':
+      return `<path d="M${x - s} ${y}q${s} ${-s * 1.3} ${s * 2} 0q${-s} ${s * 1.3} ${-s * 2} 0z" fill="${dk ? '#3F7A4E' : '#7DB956'}" transform="rotate(${(seed * 47) % 360} ${x} ${y})"/>`;
+  }
+  return '';
+}
 function buildMap() {
   pathEl.querySelectorAll('.node').forEach(e => e.remove());
   const W = pathEl.clientWidth || 340;
   const pts = [];
-  let y = 0;
-  y = 10;
+  const span = Math.min(W * 0.34, 125);
+  let y = 10, xPrev = W / 2;
   for (let i = 0; i < N; i++) {
-    const x = W / 2 + Math.sin(i * 1.05) * Math.min(W * 0.27, 105);
+    // wander left and right without a fixed rhythm
+    let x = i === 0 ? W / 2 : xPrev + (srand(i, 1) - 0.5) * span * 1.6;
+    if (Math.abs(x - xPrev) < 34) x = xPrev + (x >= xPrev ? 34 : -34);
+    x = Math.max(W / 2 - span, Math.min(W / 2 + span, x));
+    xPrev = x;
     const n = document.createElement('button');
     n.type = 'button';
     const open = isOpen(i), done = isDone(i), cur = open && !done && i === firstOpen();
@@ -584,26 +627,54 @@ function buildMap() {
     n.addEventListener('click', () => { if (isOpen(i)) { audio(); sfx.tap(); startLevel(i); } else toastMap(); });
     pathEl.appendChild(n);
     pts.push([x, y + 32, i]);
-    y += 94;
+    y += 86 + Math.round(srand(i, 2) * 22);
   }
   pathEl.style.height = (y + 10) + 'px';
-  const curve = upto => {
-    let d = '';
-    pts.forEach(([x, yy], k) => {
-      if (k > upto) return;
-      if (!k) { d = `M${x} ${yy}`; return; }
-      const [px, py] = pts[k - 1];
-      d += ` C${px} ${(py + yy) / 2} ${x} ${(py + yy) / 2} ${x} ${yy}`;
-    });
+  // bendy road: control points pushed sideways at random
+  const seg = k => {
+    const [px, py] = pts[k - 1], [x, yy] = pts[k];
+    const b1 = (srand(k, 3) - 0.5) * 70, b2 = (srand(k, 4) - 0.5) * 70;
+    return ` C${px + b1} ${py + (yy - py) * 0.45} ${x + b2} ${yy - (yy - py) * 0.45} ${x} ${yy}`;
+  };
+  const curve = (from, upto) => {
+    let d = `M${pts[from][0]} ${pts[from][1]}`;
+    for (let k = from + 1; k <= Math.min(upto, N - 1); k++) d += seg(k);
     return d;
   };
   const reached = Math.min(N - 1, firstOpen());
+  // scenery on the far side of each bend
+  const kinds = ['flower', 'tuft', 'stone', 'flower', 'shroom', 'bush', 'hill', 'crumbs', 'leaf', 'flower', 'bush', 'puddle', 'tuft'];
+  let deco = '';
+  for (let i = 0; i < N; i++) {
+    const [x, yy] = pts[i];
+    const cnt = 2 + (srand(i, 5) > 0.4) + (srand(i, 6) > 0.75);
+    for (let k = 0; k < cnt; k++) {
+      const side = x > W / 2 ? -1 : 1;
+      let dx = x + side * (50 + srand(i, 10 + k) * (W * 0.4));
+      dx = Math.max(14, Math.min(W - 14, dx));
+      const dy = yy - 20 + srand(i, 20 + k) * 80;
+      const kind = kinds[Math.floor(srand(i, 30 + k) * kinds.length)];
+      deco += decoSVG(kind, dx, dy, 6 + srand(i, 40 + k) * 4, TH, i * 7 + k);
+    }
+  }
+  // a few ants marching along the road towards the next level
+  const trailFrom = Math.max(0, reached - 4), trailTo = Math.max(reached, 1);
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let marchers = '';
+  if (!reduce && trailTo > trailFrom) {
+    const durS = 6 + (trailTo - trailFrom) * 3;
+    for (let k = 0; k < 7; k++) {
+      marchers += `<g><g transform="scale(1.7) translate(-6 0)"><ellipse cx="-3.2" cy="0" rx="2.6" ry="2" fill="${TH.dark ? '#E8D9C4' : '#3B2A1E'}"/><ellipse cx="0" cy="0" rx="1.5" ry="1.2" fill="${TH.dark ? '#E8D9C4' : '#3B2A1E'}"/><circle cx="2.4" cy="0" r="1.5" fill="${TH.dark ? '#E8D9C4' : '#3B2A1E'}"/><path d="M-1 -1.4l-1-2.4M1 -1.4l1 -2.4M-1 1.4l-1 2.4M1 1.4l1 2.4" stroke="${TH.dark ? '#E8D9C4' : '#3B2A1E'}" stroke-width=".7"/>${k % 2 ? '' : `<rect x="3.2" y="-1.6" width="3.2" height="3.2" fill="${['#EF4438', '#FFD23F', '#63C04A', '#3B7FE0'][k % 4]}"/>`}</g><animateMotion dur="${durS}s" repeatCount="indefinite" rotate="auto" begin="${-(k * durS / 7).toFixed(2)}s"><mpath href="#antTrail"/></animateMotion></g>`;
+    }
+  }
   svg.setAttribute('viewBox', `0 0 ${W} ${y + 10}`);
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.style.width = W + 'px'; svg.style.height = (y + 10) + 'px';
-  svg.innerHTML = `<path d="${curve(N)}" fill="none" stroke="${TH.dark ? 'rgba(255,255,255,.16)' : 'rgba(106,70,48,.26)'}" stroke-width="12" stroke-linecap="round"/>`
-    + `<path d="${curve(N)}" fill="none" stroke="${TH.dark ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.55)'}" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"/>`
-    + (reached > 0 ? `<path d="${curve(reached)}" fill="none" stroke="#5FAE45" stroke-width="12" stroke-linecap="round"/><path d="${curve(reached)}" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"/>` : '');
+  svg.innerHTML = deco
+    + `<path d="${curve(0, N)}" fill="none" stroke="${TH.dark ? 'rgba(255,255,255,.14)' : 'rgba(106,70,48,.22)'}" stroke-width="5" stroke-linecap="round"/>`
+    + (reached > 0 ? `<path d="${curve(0, reached)}" fill="none" stroke="#5FAE45" stroke-width="5" stroke-linecap="round"/>` : '')
+    + `<path id="antTrail" d="${curve(trailFrom, trailTo)}" fill="none" stroke="none"/>`
+    + marchers;
   const doneN = LEVELS.filter((l, i) => isDone(i)).length;
   $('progVal').textContent = `${doneN}/${N}`;
   $('progBar').style.width = (doneN / N * 100).toFixed(1) + '%';
@@ -988,15 +1059,22 @@ function makeWalk(pts, now, c, cells, back) {
   const len = cum[cum.length - 1] || 1;
   return { pts, cum, len, t0: now, dur: len / walkSp() * 1000, c, cells, back, j: Math.random() * 6 };
 }
-function walkAt(a, d) {
+function posAt(a, d) {
   const { pts, cum } = a;
+  d = Math.max(0, Math.min(a.len, d));
   let i = 1;
   while (i < cum.length - 1 && cum[i] < d) i++;
   const seg = (cum[i] - cum[i - 1]) || 1, t = Math.max(0, Math.min(1, (d - cum[i - 1]) / seg));
   const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
-  const ang = Math.atan2(y1 - y0, x1 - x0);
-  const wob = Math.sin(d * 0.35 + a.j) * Math.min(1.2, G.cell * 0.18);
-  return [x0 + (x1 - x0) * t - Math.sin(ang) * wob, y0 + (y1 - y0) * t + Math.cos(ang) * wob, ang];
+  return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
+}
+function walkAt(a, d) {
+  // heading from a point behind to a point ahead: no snapping at corners
+  const [bx, by] = posAt(a, d - 6), [fx, fy] = posAt(a, d + 6);
+  const ang = Math.atan2(fy - by, fx - bx);
+  const [x, y] = posAt(a, d);
+  const wob = a.back ? 0 : Math.sin(d * 0.35 + a.j) * Math.min(1.2, G.cell * 0.18);
+  return [x - Math.sin(ang) * wob, y + Math.cos(ang) * wob, ang];
 }
 function frame(now) {
   raf = requestAnimationFrame(frame);
@@ -1050,17 +1128,17 @@ function blitAnt(x, y, s, ang, ci, frame, empty) {
   ctx.restore();
 }
 // the eaten cube(s), held in the jaws and dragged home
+// the eaten cube(s), held in the jaws and dragged home; kept upright so they don't wobble
 function drawCarried(x, y, ang, ci, n, antS) {
   const col = lv.colors[ci];
   const s = Math.max(4, Math.min(G.cell * 1.15, antS * 0.55));
-  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+  const hx = Math.round((x + Math.cos(ang) * antS * 0.62) * 2) / 2, hy = Math.round((y + Math.sin(ang) * antS * 0.62) * 2) / 2;
   for (let k = 0; k < n; k++) {
-    const ox = antS * 0.48 + k * s * 0.85, oy = -s / 2 + (k ? -s * 0.35 : 0);
+    const ox = hx - s / 2 + (k ? s * 0.45 : 0), oy = hy - s / 2 - (k ? s * 0.55 : 0);
     ctx.fillStyle = shadeC(col, -0.35); ctx.fillRect(ox - 0.5, oy - 0.5, s + 1, s + 1);
     ctx.fillStyle = col; ctx.fillRect(ox, oy, s, s);
     ctx.fillStyle = shadeC(col, 0.25); ctx.fillRect(ox, oy, s, Math.max(1, s * 0.22));
   }
-  ctx.restore();
 }
 function drawAnt(x, y, s, ang, col, phase, carry) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
