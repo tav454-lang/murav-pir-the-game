@@ -75,8 +75,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
 /* ---------- game ---------- */
 #game{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
-.topbar{display:flex;align-items:center;gap:8px;padding-block:8px 6px}
-.ibtn{width:44px;height:44px;border-radius:14px;background:var(--card);display:grid;place-items:center;box-shadow:0 3px 0 rgba(43,48,32,.2);flex:none}
+.topbar{display:flex;align-items:center;gap:6px;padding-block:8px 6px}
+.ibtn{width:40px;height:44px;color:var(--ink);border-radius:14px;background:var(--card);display:grid;place-items:center;box-shadow:0 3px 0 rgba(43,48,32,.2);flex:none}
 .ibtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(43,48,32,.2)}
 .ibtn svg{width:22px;height:22px}
 .ttl{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.1}
@@ -87,7 +87,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 #stage{flex:1;position:relative;min-height:0;border-radius:20px 20px 0 0;overflow:hidden}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 .tools{display:flex;gap:8px;background:var(--soil-deep);padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px));border-radius:0 0 20px 20px;margin-bottom:6px}
-.tool{flex:1;min-width:0;height:48px;border-radius:14px;background:#5C4130;color:#FBEFD9;display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.tool{flex:1;min-width:0;height:48px;border-radius:14px;background:var(--tool,#5C4130);color:#FBEFD9;display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
 .tool svg{width:20px;height:20px;flex:none}
 .tool:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
 .tool:disabled{opacity:.38}
@@ -106,7 +106,13 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .card img{width:112px;height:112px;image-rendering:pixelated;object-fit:contain}
 .card .btns{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px}
 .big{height:52px;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-size:17px;font-weight:900;box-shadow:0 4px 0 #A92E23}
-.big.alt{background:#EDE5D6;color:var(--ink);box-shadow:0 4px 0 #CDBFA6}
+.big.alt{background:#EDE5D6;color:#2B3020;box-shadow:0 4px 0 #CDBFA6}
+#themeSheet{z-index:20}
+.sheet{width:min(380px,100%)}
+.swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.swatch{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px;border-radius:14px;font-size:13px;color:var(--ink)}
+.swatch canvas{width:100%;max-width:110px;aspect-ratio:132/96;border-radius:10px;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.swatch.on{outline:3px solid var(--accent);outline-offset:1px}
 .big:active{transform:translateY(3px);box-shadow:none}
 @media (prefers-reduced-motion:reduce){.node.cur .disc{animation:none}.card{animation:none}}
 </style>
@@ -115,19 +121,29 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
   <section id="map" class="screen">
     <header class="maphead">
       <div class="logo">Муравьиный<br><em>пир</em></div>
-      <div class="tag">Отправляй муравьёв по цветам и съешь картинку до последней крошки. 200 уровней: еда, картины, сказки и интернет.</div>
+      <div class="tag">Отправляй муравьёв по цветам и съешь картинку до последней крошки. 400 уровней: еда, звери, картины, сказки и интернет.</div>
       <div class="maprow">
         <button class="pill" id="sndBtn" type="button">Звук <b id="sndVal">вкл</b></button>
+        <button class="pill" id="themeBtn" type="button">Оформление</button>
         <div class="pill" id="progPill">Съедено <b id="progVal">0</b></div>
       </div>
     </header>
     <div id="path"><svg id="pathSvg" aria-hidden="true"></svg></div>
   </section>
 
+  <div class="over" id="themeSheet" hidden>
+    <div class="card sheet" role="dialog" aria-labelledby="themeTitle">
+      <h3 id="themeTitle">Оформление</h3>
+      <p>Скатерть под картинкой и цвета вокруг. Прогресс не меняется.</p>
+      <div id="themeList" class="swatches"></div>
+      <div class="btns"><button class="big alt" id="themeClose" type="button">Готово</button></div>
+    </div>
+  </div>
   <section id="game" class="screen" hidden>
     <div class="topbar">
       <button class="ibtn" id="backBtn" type="button" aria-label="К карте уровней"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <div class="ttl"><span id="lvlNum">Уровень 1</span><b id="lvlName">Вишня</b></div>
+      <button class="ibtn" id="gThemeBtn" type="button" aria-label="Оформление"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5C21 6.5 17 3 12 3z" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="7.5" cy="11" r="1.4" fill="currentColor"/><circle cx="10" cy="7" r="1.4" fill="currentColor"/><circle cx="14.5" cy="7" r="1.4" fill="currentColor"/></svg></button>
       <button class="ibtn" id="speedBtn" type="button" aria-pressed="false" aria-label="Скорость муравьёв">×1</button>
       <button class="ibtn" id="restartBtn" type="button" aria-label="Начать уровень заново"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M19.5 3.5v4.5H15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
@@ -385,7 +401,7 @@ const TIER_NAME = ['', 'сложный', 'очень сложный'];
 // Progress is stored by level name, never by position, so updates that add
 // or regenerate levels keep everything the player has already eaten.
 const SAVE_KEY = 'murav-pir-save';
-let save = { v: 4, doneIds: [], snd: 1, spd: 0 };
+let save = { v: 4, doneIds: [], snd: 1, spd: 0, theme: 'picnic' };
 function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
 (() => {
   const s = readJSON(SAVE_KEY);
@@ -404,6 +420,40 @@ persist();
 const isDone = i => doneSet.has(LEVELS[i].name);
 const isOpen = i => i === 0 || isDone(i - 1) || isDone(i);
 function firstOpen() { for (let i = 0; i < N; i++) if (!isDone(i)) return i; return N - 1; }
+
+// ---------- themes: cloth under the picture + colours around it ----------
+const THEMES = {
+  picnic:  { name: 'Пикник', cloth: '#FCF8F2', mark: 'rgba(222,72,58,.13)', pattern: 'gingham', page: '#CFE5B2', grass: '#8DBF62', blade: '#6FA84A', path: '#B98D5E', hole: '#7A5638', soil: '#6A4630', soilDeep: '#45301F', tunnel: '#3A2919', tool: '#5C4130', ink: '#2B3020', inkSoft: '#5B6250', card: '#FFFBF4', dark: false },
+  kitchen: { name: 'Кухня', cloth: '#F6FAFE', mark: 'rgba(59,127,224,.14)', pattern: 'gingham', page: '#D4E5F3', grass: '#D9BE95', blade: '#C6A47A', path: '#EBDDC6', hole: '#B08D63', soil: '#8A6A4B', soilDeep: '#5E4631', tunnel: '#4A3626', tool: '#6E5440', ink: '#24303D', inkSoft: '#56616E', card: '#FFFFFF', dark: false },
+  wood:    { name: 'Стол', cloth: '#C99A66', mark: 'rgba(120,70,30,.22)', pattern: 'planks', page: '#E9D7BC', grass: '#8DBF62', blade: '#6FA84A', path: '#B98D5E', hole: '#7A5638', soil: '#6A4630', soilDeep: '#45301F', tunnel: '#3A2919', tool: '#5C4130', ink: '#33261A', inkSoft: '#6B5844', card: '#FFF8EE', dark: false },
+  candy:   { name: 'Конфетный', cloth: '#FFFFFF', mark: 'rgba(255,120,170,.22)', pattern: 'dots', page: '#F8DDE8', grass: '#A8D8B9', blade: '#8CC5A0', path: '#F3C9D8', hole: '#D98CAB', soil: '#B9658A', soilDeep: '#8E4466', tunnel: '#6E3350', tool: '#9A4D70', ink: '#3A2430', inkSoft: '#7A5566', card: '#FFFFFF', dark: false },
+  night:   { name: 'Ночь', cloth: '#262C40', mark: 'rgba(255,255,255,.05)', pattern: 'gingham', page: '#171B28', grass: '#355E44', blade: '#284A35', path: '#4E4234', hole: '#33281F', soil: '#3A2A1E', soilDeep: '#241911', tunnel: '#1A120C', tool: '#3A2C21', ink: '#ECEAF4', inkSoft: '#A5A3B5', card: '#272D40', dark: true },
+  meadow:  { name: 'Луг', cloth: '#9ED27A', mark: 'rgba(40,110,40,.14)', pattern: 'grass', page: '#BFE3A2', grass: '#7DB956', blade: '#5E9C3C', path: '#C9A06C', hole: '#7A5638', soil: '#6A4630', soilDeep: '#45301F', tunnel: '#3A2919', tool: '#5C4130', ink: '#22301A', inkSoft: '#4E6043', card: '#FBFFF4', dark: false },
+};
+let TH = THEMES[save.theme] || THEMES.picnic;
+function applyTheme() {
+  TH = THEMES[save.theme] || THEMES.picnic;
+  const r = document.documentElement.style;
+  r.setProperty('--meadow', TH.page); r.setProperty('--ink', TH.ink); r.setProperty('--ink-soft', TH.inkSoft);
+  r.setProperty('--card', TH.card); r.setProperty('--soil-deep', TH.soilDeep); r.setProperty('--tool', TH.tool);
+  r.setProperty('color-scheme', TH.dark ? 'dark' : 'light');
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', TH.page);
+}
+function paintCloth(c, W, Hh, T) {
+  c.fillStyle = T.cloth; c.fillRect(0, 0, W, Hh);
+  c.fillStyle = T.mark;
+  if (T.pattern === 'gingham') {
+    const sq = 22;
+    for (let x = 0; x < W; x += sq * 2) c.fillRect(x, 0, sq, Hh);
+    for (let y = 0; y < Hh; y += sq * 2) c.fillRect(0, y, W, sq);
+  } else if (T.pattern === 'planks') {
+    for (let y = 0; y < Hh; y += 34) { c.fillRect(0, y, W, 2); for (let k = 0; k < 6; k++) c.fillRect(((y * 7 + k * 97) % W), y + 8 + (k % 3) * 8, 40 + (k * 13) % 50, 1); }
+  } else if (T.pattern === 'dots') {
+    for (let y = 8, r = 0; y < Hh; y += 22, r++) for (let x = (r % 2) * 11 + 6; x < W; x += 22) { c.beginPath(); c.arc(x, y, 4, 0, Math.PI * 2); c.fill(); }
+  } else if (T.pattern === 'grass') {
+    for (let k = 0; k < W * Hh / 260; k++) { const x = (k * 53) % W, y = (k * 97 + (k * k) % 31) % Hh; c.fillRect(x, y, 1.5, 5); }
+  }
+}
 
 // ---------- colours ----------
 function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
@@ -508,10 +558,34 @@ function showMap() {
   const cur = pathEl.querySelector('.node.cur') || pathEl.querySelector('.node.done:last-of-type');
   if (cur) $('map').scrollTop = Math.max(0, cur.offsetTop + pathEl.offsetTop - $('map').clientHeight * 0.45);
 }
+function openThemes() {
+  const box = $('themeList');
+  box.innerHTML = '';
+  for (const [id, T] of Object.entries(THEMES)) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'swatch' + (save.theme === id || (!save.theme && id === 'picnic') ? ' on' : '');
+    const c = document.createElement('canvas'); c.width = 132; c.height = 96;
+    const x = c.getContext('2d'); x.scale(1.2, 1.2);
+    paintCloth(x, 110, 60, T);
+    x.fillStyle = T.grass; x.fillRect(0, 56, 110, 8); x.fillStyle = T.soil; x.fillRect(0, 64, 110, 20);
+    x.fillStyle = T.tunnel; for (let k = 0; k < 3; k++) { x.beginPath(); x.roundRect ? x.roundRect(8 + k * 34, 67, 26, 13, 4) : x.rect(8 + k * 34, 67, 26, 13); x.fill(); }
+    ['#EF4438', '#FFD23F', '#3B7FE0'].forEach((col, k) => { x.fillStyle = col; x.fillRect(38 + k * 12, 22, 11, 11); });
+    b.appendChild(c);
+    const s = document.createElement('span'); s.textContent = T.name; b.appendChild(s);
+    b.onclick = () => { save.theme = id; persist(); applyTheme(); openThemes(); if (!$('game').hidden) { boardDirty = true; } sfx.tap(); };
+    box.appendChild(b);
+  }
+  $('themeSheet').hidden = false;
+}
+$('themeBtn').addEventListener('click', () => { audio(); openThemes(); });
+$('gThemeBtn').addEventListener('click', () => { audio(); openThemes(); });
+$('themeClose').addEventListener('click', () => { $('themeSheet').hidden = true; });
+$('themeSheet').addEventListener('click', e => { if (e.target.id === 'themeSheet') $('themeSheet').hidden = true; });
+applyTheme();
 $('sndBtn').addEventListener('click', () => { save.snd = save.snd ? 0 : 1; persist(); $('sndVal').textContent = save.snd ? 'вкл' : 'выкл'; if (save.snd) sfx.tap(); });
 
 // ---------- game state ----------
-const cv = $('cv'), ctx = cv.getContext('2d');
+const cv = $('cv'); let ctx = cv.getContext('2d');
 let LI = 0, lv = null, st = null, hist = [], extraUsed = false;
 let ants = [], crumbs = [], pending = new Map(), slotPop = [], colAnim = [];
 let hintCol = -1, hintUntil = 0, ended = false, tickAcc = 0, lastT = 0, raf = 0, idleSince = 0;
@@ -687,10 +761,16 @@ function tick(now) {
     bySlot.get(e.slot).push(e);
     if (e.done) setTimeout(() => sfx.done(), 120);
   }
-  for (const [slot, list] of bySlot) {
-    const [tx, ty] = cellXY(list[0].cell);
-    const sx = slotX(slot) + (Math.random() - 0.5) * slotR(), sy = G.slotY - 6;
-    ants.push(makeTrip(sx, sy, tx, ty + G.cell * 0.3, now, list[0].c, list.map(e => e.cell), false));
+  if (bySlot.size) {
+    const field = routeField();
+    for (const [slot, list] of bySlot) {
+      for (let q = 0; q < list.length; q += 2) {
+        const cells = list.slice(q, q + 2).map(e => e.cell);
+        const sx = slotX(slot) + (Math.random() - 0.5) * slotR() * 1.2;
+        const pts = routeTo(field, cells[0], sx, G.slotY - 8);
+        ants.push(makeWalk(pts, now + q * 35, list[0].c, cells, false));
+      }
+    }
   }
   if (!ev.length && !ended) {
     if (L.won(st)) { if (!pending.size) win(); }
@@ -700,24 +780,101 @@ function tick(now) {
     } else idleSince = 0;
   } else idleSince = 0;
 }
-// A trip is a curved walk: cubic Bezier with sideways bends plus a little zigzag.
-function makeTrip(sx, sy, tx, ty, now, c, cells, back) {
-  const dx = tx - sx, dy = ty - sy, len = Math.hypot(dx, dy) || 1;
-  const nx = -dy / len, ny = dx / len;
-  const bend1 = (Math.random() - 0.5) * len * 0.9, bend2 = (Math.random() - 0.5) * len * 0.9;
-  const p1 = [sx + dx * 0.3 + nx * bend1, sy + dy * 0.3 + ny * bend1];
-  const p2 = [sx + dx * 0.7 + nx * bend2, sy + dy * 0.7 + ny * bend2];
-  const sp = 190 * speedMul();
-  return { p0: [sx, sy], p1, p2, p3: [tx, ty], t0: now, dur: (len * 1.3 + Math.abs(bend1 - bend2) * 0.3) / sp * 1000,
-    c, cells, back, j: Math.random() * 6, wig: 2 + Math.random() * 3, freq: 3 + Math.random() * 4 };
+// Ants walk only through open space: the cloth around the picture and the
+// tunnels already chewed into it. A distance field (cheapest way out to the
+// bottom of the picture) is rebuilt each tick; each ant follows it downhill.
+function routeField() {
+  const w = lv.w, h = lv.h, W2 = w + 2, H2 = h + 2, n = W2 * H2;
+  const D = new Int32Array(n).fill(1e9);
+  const walk = new Uint8Array(n);
+  for (let py = 0; py < H2; py++) for (let px = 0; px < W2; px++) {
+    const p = py * W2 + px;
+    if (px === 0 || py === 0 || px === W2 - 1 || py === H2 - 1) { walk[p] = 1; continue; }
+    const k = (py - 1) * w + (px - 1);
+    if (st.board[k] === -1 && st.out[k]) walk[p] = 1;
+  }
+  // start costs on the ring around the picture: bottom is the way home
+  const buckets = [];
+  const push = (p, d) => { if (d < D[p]) { D[p] = d; (buckets[d] || (buckets[d] = [])).push(p); } };
+  for (let px = 0; px < W2; px++) push((H2 - 1) * W2 + px, 0);
+  for (let d = 0; d < buckets.length; d++) {
+    const bk = buckets[d]; if (!bk) continue;
+    for (const p of bk) {
+      if (D[p] !== d) continue;
+      const px = p % W2, py = (p / W2) | 0;
+      if (px > 0 && walk[p - 1]) push(p - 1, d + 1);
+      if (px < W2 - 1 && walk[p + 1]) push(p + 1, d + 1);
+      if (py > 0 && walk[p - W2]) push(p - W2, d + 1);
+      if (py < H2 - 1 && walk[p + W2]) push(p + W2, d + 1);
+    }
+  }
+  return { D, W2, H2 };
 }
-function tripAt(a, t) {
-  const u = 1 - t;
-  const b = (i) => u * u * u * a.p0[i] + 3 * u * u * t * a.p1[i] + 3 * u * t * t * a.p2[i] + t * t * t * a.p3[i];
-  let x = b(0), y = b(1);
-  const dx = a.p3[0] - a.p0[0], dy = a.p3[1] - a.p0[1], l = Math.hypot(dx, dy) || 1;
-  const w = Math.sin(t * Math.PI) * Math.sin(t * Math.PI * a.freq + a.j) * a.wig;
-  return [x - dy / l * w, y + dx / l * w];
+function padXY(f, p) {
+  const px = p % f.W2, py = (p / f.W2) | 0, c = G.cell;
+  let x = G.bx + (px - 0.5) * c, y = G.by + (py - 0.5) * c;
+  const out = Math.max(2, c * 0.9);           // keep the ring path off the blocks
+  if (px === 0) x -= out; else if (px === f.W2 - 1) x += out;
+  if (py === 0) y -= out; else if (py === f.H2 - 1) y += out;
+  return [x, y];
+}
+function routeTo(f, cell, sx, sy) {
+  const { D, W2 } = f;
+  const tx = cell % lv.w + 1, ty = ((cell / lv.w) | 0) + 1, tp = ty * W2 + tx;
+  let p = -1, best = 1e9;
+  for (const q of [tp + W2, tp - 1, tp + 1, tp - W2]) if (D[q] < best) { best = D[q]; p = q; }
+  const chain = [];
+  let guard = 0;
+  while (p >= 0 && guard++ < 4000) {
+    chain.push(p);
+    if (D[p] === 0) break;
+    let nx = -1, nd = D[p];
+    for (const q of [p + W2, p - 1, p + 1, p - W2]) if (q >= 0 && q < D.length && D[q] < nd) { nd = D[q]; nx = q; }
+    p = nx;
+  }
+  // from the cell outwards to the edge, then home: reverse for the trip in
+  const pts = [[sx, sy]];
+  const last = chain.length ? padXY(f, chain[chain.length - 1]) : [sx, G.by + G.bh + G.cell];
+  pts.push([last[0], last[1] + G.cell * 0.4]);
+  for (let i = chain.length - 1; i >= 0; i--) {
+    // keep only corners to make smooth runs
+    if (i > 0 && i < chain.length - 1) {
+      const a = chain[i + 1], b = chain[i], c = chain[i - 1];
+      if (b - a === c - b) continue;
+    }
+    pts.push(padXY(f, chain[i]));
+  }
+  const [cx, cy] = cellXY(cell);
+  const end = pts[pts.length - 1];
+  pts.push([end[0] + (cx - end[0]) * 0.55, end[1] + (cy - end[1]) * 0.55]);
+  return smoothPath(pts);
+}
+function smoothPath(pts) {
+  if (pts.length < 3) return pts;
+  const out = [pts[0]];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+    if (i > 0) out.push([x0 * 0.75 + x1 * 0.25, y0 * 0.75 + y1 * 0.25]);
+    if (i < pts.length - 2) out.push([x0 * 0.25 + x1 * 0.75, y0 * 0.25 + y1 * 0.75]);
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+function makeWalk(pts, now, c, cells, back) {
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const len = cum[cum.length - 1] || 1;
+  return { pts, cum, len, t0: now, dur: len / (190 * speedMul()) * 1000, c, cells, back, j: Math.random() * 6 };
+}
+function walkAt(a, d) {
+  const { pts, cum } = a;
+  let i = 1;
+  while (i < cum.length - 1 && cum[i] < d) i++;
+  const seg = (cum[i] - cum[i - 1]) || 1, t = Math.max(0, Math.min(1, (d - cum[i - 1]) / seg));
+  const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+  const ang = Math.atan2(y1 - y0, x1 - x0);
+  const wob = Math.sin(d * 0.35 + a.j) * Math.min(1.2, G.cell * 0.18);
+  return [x0 + (x1 - x0) * t - Math.sin(ang) * wob, y0 + (y1 - y0) * t + Math.cos(ang) * wob, ang];
 }
 function frame(now) {
   raf = requestAnimationFrame(frame);
@@ -728,7 +885,7 @@ function frame(now) {
   // ants: arrive, bite, walk home by another path
   for (let k = 0; k < ants.length; k++) {
     const a = ants[k];
-    if (!a.back && (now - a.t0) / a.dur >= 1) {
+    if (!a.back && now >= a.t0 && (now - a.t0) / a.dur >= 1) {
       const col = lv.colors[a.c];
       a.cells.forEach((cell, n) => {
         pending.delete(cell);
@@ -736,7 +893,7 @@ function frame(now) {
         if (n < 3) { const [cx, cy] = cellXY(cell); for (let q = 0; q < 2; q++) crumbs.push({ x: cx, y: cy, vx: (Math.random() - 0.5) * 120, vy: -Math.random() * 120, life: 0.5, c: col, s: Math.max(2, G.cell * 0.5) }); }
       });
       chomp();
-      const h = makeTrip(a.p3[0], a.p3[1], a.p0[0] + (Math.random() - 0.5) * 20, a.p0[1], now, a.c, [], true);
+      const h = makeWalk(a.pts.slice().reverse(), now, a.c, [], true);
       h.dur *= 0.85;
       ants[k] = h;
     }
@@ -749,6 +906,25 @@ function frame(now) {
 
 // ---------- drawing ----------
 function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
+const antCache = new Map();
+function blitAnt(x, y, s, ang, ci, frame, empty) {
+  const col = lv.colors[ci];
+  const key = col + '|' + frame + '|' + (empty ? 0 : 1) + '|' + Math.round(s);
+  let spr = antCache.get(key);
+  if (!spr) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 3), size = Math.ceil(s * 1.6);
+    spr = document.createElement('canvas'); spr.width = spr.height = Math.ceil(size * dpr);
+    const c2 = spr.getContext('2d'), keep = ctx;
+    c2.scale(dpr, dpr);
+    ctx = c2; drawAnt(size / 2, size / 2, s, 0, col, frame * 1.6, empty ? null : shade(col, 0.15)); ctx = keep;
+    spr.css = size;
+    if (antCache.size > 400) antCache.clear();
+    antCache.set(key, spr);
+  }
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+  ctx.drawImage(spr, -spr.css / 2, -spr.css / 2, spr.css, spr.css);
+  ctx.restore();
+}
 function drawAnt(x, y, s, ang, col, phase, carry) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
   const dark = shade(col, -0.55);
@@ -811,29 +987,25 @@ function draw(now) {
   const { W, H, cell } = G;
   ctx.clearRect(0, 0, W, H);
   // cloth
-  ctx.fillStyle = '#FCF8F2'; ctx.fillRect(0, 0, W, G.boardH + 10);
-  ctx.fillStyle = 'rgba(222,72,58,.12)';
-  const sq = 22;
-  for (let x = 0; x < W; x += sq * 2) ctx.fillRect(x, 0, sq, G.boardH + 10);
-  for (let y = 0; y < G.boardH + 10; y += sq * 2) ctx.fillRect(0, y, W, sq);
+  paintCloth(ctx, W, G.boardH + 10, TH);
   // food shadow plate
-  ctx.fillStyle = 'rgba(43,48,32,.07)'; rr(G.bx - 8, G.by - 8, G.bw + 16, G.bh + 16, 14); ctx.fill();
+  ctx.fillStyle = TH.dark ? 'rgba(0,0,0,.25)' : 'rgba(43,48,32,.07)'; rr(G.bx - 8, G.by - 8, G.bw + 16, G.bh + 16, 14); ctx.fill();
   // board cells (pre-rendered; eaten cells are cleared from the cache)
   if (!boardCv || boardDirty) renderBoard();
   ctx.drawImage(boardCv, G.bx, G.by, G.bw, G.bh);
   // grass edge + ground strip with path
   const gy = G.boardH;
-  ctx.fillStyle = '#8DBF62'; ctx.fillRect(0, gy, W, G.slotH);
-  ctx.fillStyle = '#6FA84A';
+  ctx.fillStyle = TH.grass; ctx.fillRect(0, gy, W, G.slotH);
+  ctx.fillStyle = TH.blade;
   for (let x = 0; x < W; x += 9) { ctx.beginPath(); ctx.moveTo(x, gy + 4); ctx.lineTo(x + 4, gy - 6 - ((x * 7) % 5)); ctx.lineTo(x + 8, gy + 4); ctx.fill(); }
-  ctx.fillStyle = '#B98D5E'; rr(6, G.slotY - 30, W - 12, 60, 30); ctx.fill();
+  ctx.fillStyle = TH.path; rr(6, G.slotY - 30, W - 12, 60, 30); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,.18)'; rr(6, G.slotY - 30, W - 12, 8, 4); ctx.fill();
   // slots
   const R = slotR();
   for (let i = 0; i < st.cap; i++) {
     const x = slotX(i), y = G.slotY;
     const sl = st.slots[i];
-    ctx.fillStyle = '#7A5638'; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = TH.hole; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.arc(x, y + 2, R - 4, 0, Math.PI * 2); ctx.fill();
     if (!sl) continue;
     const p = slotPop[i] ? Math.min(1, (now - slotPop[i]) / 180) : 1;
@@ -854,16 +1026,16 @@ function draw(now) {
   }
   // underground
   const uy = G.ugY;
-  ctx.fillStyle = '#6A4630'; ctx.fillRect(0, uy, W, H - uy);
+  ctx.fillStyle = TH.soil; ctx.fillRect(0, uy, W, H - uy);
   ctx.fillStyle = 'rgba(0,0,0,.08)';
   for (let k = 0; k < 40; k++) { const x = (k * 97) % W, y = uy + ((k * 53) % Math.max(1, H - uy)); ctx.beginPath(); ctx.arc(x, y, 2 + (k % 3), 0, Math.PI * 2); ctx.fill(); }
-  ctx.fillStyle = '#45301F'; ctx.fillRect(0, uy, W, 6);
+  ctx.fillStyle = TH.soilDeep; ctx.fillRect(0, uy, W, 6);
   const free = L.freeSlot(st) >= 0;
   for (let c = 0; c < lv.cols.length; c++) {
     let cx = colX(c);
     if (shakeCols[c] && now - shakeCols[c] < 300) cx += Math.sin((now - shakeCols[c]) / 22) * 5;
     const top = uy + 14;
-    ctx.fillStyle = '#3A2919'; rr(cx - G.chipW / 2 - 5, top - 6, G.chipW + 10, H - top - 2, 16); ctx.fill();
+    ctx.fillStyle = TH.tunnel; rr(cx - G.chipW / 2 - 5, top - 6, G.chipW + 10, H - top - 2, 16); ctx.fill();
     const col = lv.cols[c];
     const p0 = st.ptr[c];
     const ap = colAnim[c] ? Math.min(1, (now - colAnim[c]) / 170) : 1;
@@ -887,18 +1059,15 @@ function draw(now) {
     }
   }
   // ants on the move
-  const antS = Math.max(11, Math.min(16, cell * 2.2));
+  const antS = Math.max(8, Math.min(14, cell * 1.9));
   for (const a of ants) {
+    if (now < a.t0) continue;
     const p = Math.min(1, (now - a.t0) / a.dur);
-    const t = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-    const [x, y] = tripAt(a, t);
-    const [x2, y2] = tripAt(a, Math.min(1, t + 0.02));
-    const ang = Math.atan2(y2 - y, x2 - x);
-    const col = lv.colors[a.c];
-    ctx.globalAlpha = a.back ? Math.min(1, (1 - p) * 3) : 1;
-    drawAnt(x, y, antS, ang, col, now / 45 + a.j, a.back ? shade(col, 0.1) : null);
-    ctx.globalAlpha = 1;
+    const [x, y, ang] = walkAt(a, p * a.len);
+    ctx.globalAlpha = a.back && p > 0.85 ? (1 - p) / 0.15 : 1;
+    blitAnt(x, y, antS, ang, a.c, ((now / 70 + a.j) | 0) % 4, !a.back);
   }
+  ctx.globalAlpha = 1;
   for (const c of crumbs) {
     ctx.globalAlpha = Math.max(0, Math.min(1, c.life * 2.2));
     ctx.fillStyle = c.c; ctx.fillRect(c.x - c.s / 2, c.y - c.s / 2, c.s, c.s);
@@ -931,7 +1100,7 @@ function drawChip(cx, y, g, isTop, active, more, now, c) {
   numText(g.n, x + w - Math.max(big ? 26 : 20, h * (big ? 0.62 : 0.48)), y + h / 2, Math.round(h * (big ? 0.34 : 0.42)), col);
   if (more) {
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#3A2919'; rr(x - 1, y - 1, w + 2, h + 4, 12); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.08)'; rr(x, y, w, h, 12); ctx.fill();
+    ctx.fillStyle = TH.tunnel; rr(x - 1, y - 1, w + 2, h + 4, 12); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.08)'; rr(x, y, w, h, 12); ctx.fill();
     ctx.fillStyle = '#FBEFD9'; ctx.font = `900 ${Math.round(h * 0.36)}px Nunito, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(`ещё ${more}`, cx, y + h / 2);
   }
