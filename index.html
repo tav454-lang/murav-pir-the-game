@@ -929,6 +929,7 @@ function startLevel(i) {
     cols: src.cols.map(c => c.map(([c0, n]) => ({ c: c0, n }))) };
   lv.bite = Math.max(1, Math.round(src.cells.filter(v => v >= 0).length / 260));
   lv.mech = src.mech || '';
+  save.spd = 0; persist();   // every level starts at normal speed
   applyTheme(lv.mech === 'fog' ? 'night' : lv.mech === 'hidden' ? 'sunset' : null);
   st = L.makeState(lv);
   hist = []; extraUsed = false; ended = false; undoLeft = UNDOS; hintLeft = HINTS;
