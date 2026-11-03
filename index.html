@@ -107,7 +107,11 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .card .btns{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px}
 .big{height:52px;border-radius:16px;background:var(--accent);color:var(--accent-ink);font-size:17px;font-weight:900;box-shadow:0 4px 0 #A92E23}
 .big.alt{background:#EDE5D6;color:#2B3020;box-shadow:0 4px 0 #CDBFA6}
-#themeSheet{z-index:20}
+#themeSheet,#saveSheet{z-index:20}
+.fld{align-self:flex-start;font-size:13px;color:var(--ink-soft);margin-top:4px}
+.sheet textarea{width:100%;font:800 14px/1.35 ui-monospace,Menlo,monospace;padding:10px;border-radius:12px;border:2px solid rgba(0,0,0,.12);background:#fff;color:#2B3020;resize:none;word-break:break-all;-webkit-user-select:text;user-select:text}
+.sheet .big{width:100%}
+.msg{min-height:1.3em;color:var(--ink)!important;font-size:14px}
 .sheet{width:min(380px,100%)}
 .swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
 .swatch{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px;border-radius:14px;font-size:13px;color:var(--ink)}
@@ -125,6 +129,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
       <div class="maprow">
         <button class="pill" id="sndBtn" type="button">Звук <b id="sndVal">вкл</b></button>
         <button class="pill" id="themeBtn" type="button">Оформление</button>
+        <button class="pill" id="saveBtn" type="button">Сохранение</button>
         <div class="pill" id="progPill">Съедено <b id="progVal">0</b></div>
       </div>
     </header>
@@ -137,6 +142,20 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
       <p>Скатерть под картинкой и цвета вокруг. Прогресс не меняется.</p>
       <div id="themeList" class="swatches"></div>
       <div class="btns"><button class="big alt" id="themeClose" type="button">Готово</button></div>
+    </div>
+  </div>
+  <div class="over" id="saveSheet" hidden>
+    <div class="card sheet" role="dialog" aria-labelledby="saveTitle">
+      <h3 id="saveTitle">Сохранение</h3>
+      <p>Прогресс хранится на этом устройстве. Скопируй код, чтобы вернуть его после переустановки или перенести на другой телефон.</p>
+      <label class="fld" for="saveCode">Твой код</label>
+      <textarea id="saveCode" readonly rows="3"></textarea>
+      <button class="big" id="copyCode" type="button">Скопировать код</button>
+      <label class="fld" for="loadCode">Вставить код с другого устройства</label>
+      <textarea id="loadCode" rows="2" placeholder="PIR1-…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+      <button class="big alt" id="applyCode" type="button">Загрузить прогресс</button>
+      <p id="saveMsg" class="msg" aria-live="polite"></p>
+      <div class="btns"><button class="big alt" id="saveClose" type="button">Готово</button></div>
     </div>
   </div>
   <section id="game" class="screen" hidden>
@@ -415,6 +434,8 @@ function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch
   }
 })();
 let doneSet = new Set(save.doneIds);
+// ask the system to keep this game's data even when storage runs low
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
 function persist() { save.doneIds = [...doneSet]; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
 persist();
 const isDone = i => doneSet.has(LEVELS[i].name);
@@ -582,6 +603,59 @@ $('gThemeBtn').addEventListener('click', () => { audio(); openThemes(); });
 $('themeClose').addEventListener('click', () => { $('themeSheet').hidden = true; });
 $('themeSheet').addEventListener('click', e => { if (e.target.id === 'themeSheet') $('themeSheet').hidden = true; });
 applyTheme();
+
+// ---------- save code: copy progress to another device or after reinstall ----------
+// Levels are only ever appended, so a bitset over level positions stays valid.
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function makeCode() {
+  const bits = LEVELS.map((l, i) => isDone(i) ? 1 : 0);
+  let s = '';
+  for (let i = 0; i < bits.length; i += 6) {
+    let v = 0; for (let k = 0; k < 6; k++) v = v * 2 + (bits[i + k] || 0);
+    s += B64[v];
+  }
+  s = s.replace(/A+$/, '');
+  let sum = 0; for (const ch of s) sum = (sum * 31 + B64.indexOf(ch)) % 4096;
+  return 'PIR1-' + B64[sum >> 6] + B64[sum & 63] + '-' + (s || 'A');
+}
+function readCode(code) {
+  const m = String(code).trim().replace(/\s+/g, '').match(/^PIR1-([A-Za-z0-9_-]{2})-([A-Za-z0-9_-]+)$/i);
+  if (!m) return null;
+  const body = m[2] === 'A' ? '' : m[2];
+  let sum = 0; for (const ch of body) { const v = B64.indexOf(ch); if (v < 0) return null; sum = (sum * 31 + v) % 4096; }
+  if (B64[sum >> 6] + B64[sum & 63] !== m[1]) return null;
+  const idx = [];
+  [...body].forEach((ch, j) => { const v = B64.indexOf(ch); for (let k = 0; k < 6; k++) if (v & (32 >> k)) idx.push(j * 6 + k); });
+  return idx.filter(i => i < N);
+}
+function openSave() {
+  $('saveCode').value = makeCode();
+  $('loadCode').value = '';
+  $('saveMsg').textContent = '';
+  $('saveSheet').hidden = false;
+}
+$('saveBtn').addEventListener('click', () => { audio(); openSave(); });
+$('saveClose').addEventListener('click', () => { $('saveSheet').hidden = true; });
+$('saveSheet').addEventListener('click', e => { if (e.target.id === 'saveSheet') $('saveSheet').hidden = true; });
+$('copyCode').addEventListener('click', () => {
+  const ta = $('saveCode');
+  const done = () => { $('saveMsg').textContent = 'Код скопирован. Сохрани его в заметках или отправь себе.'; };
+  try {
+    navigator.clipboard.writeText(ta.value).then(done, () => { ta.focus(); ta.select(); $('saveMsg').textContent = 'Код выделен — нажми «Скопировать».'; });
+  } catch (e) { ta.focus(); ta.select(); $('saveMsg').textContent = 'Код выделен — нажми «Скопировать».'; }
+});
+$('applyCode').addEventListener('click', () => {
+  const idx = readCode($('loadCode').value);
+  if (!idx) { $('saveMsg').textContent = 'Код не подходит. Проверь, что он вставлен целиком, начиная с PIR1-.'; sfx.deny(); return; }
+  const before = doneSet.size;
+  idx.forEach(i => doneSet.add(LEVELS[i].name));
+  persist();
+  const added = doneSet.size - before;
+  $('saveMsg').textContent = added ? `Готово: добавлено пройденных уровней — ${added}.` : 'Все уровни из кода уже пройдены на этом устройстве.';
+  $('saveCode').value = makeCode();
+  sfx.done();
+  buildMap();
+});
 $('sndBtn').addEventListener('click', () => { save.snd = save.snd ? 0 : 1; persist(); $('sndVal').textContent = save.snd ? 'вкл' : 'выкл'; if (save.snd) sfx.tap(); });
 
 // ---------- game state ----------
