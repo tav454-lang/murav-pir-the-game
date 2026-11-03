@@ -496,44 +496,56 @@ function thumb(lv, px) {
 const THUMBS = LEVELS.map(lv => thumb(lv, 3));
 
 // ---------- sound ----------
-let AC = null, noiseBuf = null, lastChomp = 0;
+// Soft, musical sounds: everything runs through a gentle low-pass and a
+// compressor so dozens of bites never stack into noise.
+let AC = null, OUT = null, lastChomp = 0, chompStep = 0;
 function audio() {
   if (!save.snd) return null;
   if (!AC) {
     try {
       AC = new (window.AudioContext || window.webkitAudioContext)();
-      noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.12, AC.sampleRate);
-      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const comp = AC.createDynamicsCompressor();
+      comp.threshold.value = -20; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
+      const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5200;
+      const master = AC.createGain(); master.gain.value = 0.8;
+      master.connect(lp).connect(comp).connect(AC.destination);
+      OUT = master;
     } catch (e) { return null; }
   }
   if (AC.state === 'suspended') AC.resume();
   return AC;
 }
-function tone(freq, dur, type = 'sine', vol = 0.15, when = 0, slide = 0) {
+function note(freq, dur, { type = 'sine', vol = 0.12, when = 0, slide = 0, attack = 0.006 } = {}) {
   const a = audio(); if (!a) return;
   const t = a.currentTime + when;
   const o = a.createOscillator(), g = a.createGain();
   o.type = type; o.frequency.setValueAtTime(freq, t);
   if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(OUT); o.start(t); o.stop(t + dur + 0.03);
 }
-function chomp() {
+// a bell-like pluck: sine plus a quiet octave that fades faster
+function pluck(freq, vol, when = 0, len = 0.22) {
+  note(freq, len, { vol, when });
+  note(freq * 2, len * 0.45, { vol: vol * 0.35, when });
+}
+// pentatonic notes so bites always sound in tune with each other
+const PENTA = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.5];
+function chomp(colorIdx = 0) {
   const a = audio(); if (!a) return;
-  const now = performance.now(); if (now - lastChomp < 45) return; lastChomp = now;
-  const t = a.currentTime;
-  const s = a.createBufferSource(); s.buffer = noiseBuf;
-  const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900 + Math.random() * 1500; f.Q.value = 2.5;
-  const g = a.createGain(); g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
-  s.connect(f).connect(g).connect(a.destination); s.start(t); s.stop(t + 0.08);
-  tone(220 + Math.random() * 120, 0.05, 'square', 0.025);
+  const now = performance.now(); if (now - lastChomp < 70) return; lastChomp = now;
+  // gentle "pop": a sine that drops in pitch, like a soft bubble
+  const base = PENTA[(colorIdx * 3 + (chompStep++ % 3)) % PENTA.length];
+  note(base, 0.11, { vol: 0.07, slide: 0.55, attack: 0.004 });
+  note(base * 1.5, 0.06, { vol: 0.025, slide: 0.7, attack: 0.003 });
 }
 const sfx = {
-  tap: () => tone(520, 0.09, 'triangle', 0.18, 0, 1.6),
-  deny: () => { tone(200, 0.12, 'square', 0.06); tone(160, 0.14, 'square', 0.06, 0.08); },
-  done: () => tone(880, 0.12, 'sine', 0.09, 0, 1.25),
-  win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.16, i * 0.11)),
-  lose: () => [392, 330, 262].forEach((f, i) => tone(f, 0.26, 'triangle', 0.14, i * 0.14)),
+  tap: () => { note(392, 0.12, { type: 'triangle', vol: 0.12, slide: 1.5 }); note(784, 0.08, { vol: 0.04, when: 0.03 }); },
+  deny: () => { note(247, 0.14, { type: 'triangle', vol: 0.09 }); note(220, 0.18, { type: 'triangle', vol: 0.08, when: 0.09 }); },
+  done: () => { pluck(1046.5, 0.07); pluck(1568, 0.05, 0.07); },
+  win: () => [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => pluck(f, 0.11, i * 0.09, 0.5)),
+  lose: () => [392, 349.23, 311.13, 261.63].forEach((f, i) => note(f, 0.32, { type: 'triangle', vol: 0.09, when: i * 0.13 })),
+  rush: () => [659.25, 783.99, 987.77].forEach((f, i) => pluck(f, 0.06, i * 0.06, 0.25)),
 };
 
 // ---------- map ----------
@@ -560,14 +572,23 @@ function buildMap() {
     y += 116;
   }
   pathEl.style.height = (y + 10) + 'px';
-  let d = '';
-  pts.forEach(([x, yy], k) => {
-    if (!k) { d = `M${x} ${yy}`; return; }
-    const [px, py] = pts[k - 1];
-    d += ` C${px} ${(py + yy) / 2} ${x} ${(py + yy) / 2} ${x} ${yy}`;
-  });
+  const curve = upto => {
+    let d = '';
+    pts.forEach(([x, yy], k) => {
+      if (k > upto) return;
+      if (!k) { d = `M${x} ${yy}`; return; }
+      const [px, py] = pts[k - 1];
+      d += ` C${px} ${(py + yy) / 2} ${x} ${(py + yy) / 2} ${x} ${yy}`;
+    });
+    return d;
+  };
+  const reached = Math.min(N - 1, firstOpen());
   svg.setAttribute('viewBox', `0 0 ${W} ${y + 10}`);
-  svg.innerHTML = `<path d="${d}" fill="none" stroke="rgba(106,70,48,.35)" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 15"/>`;
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.style.width = W + 'px'; svg.style.height = (y + 10) + 'px';
+  svg.innerHTML = `<path d="${curve(N)}" fill="none" stroke="${TH.dark ? 'rgba(255,255,255,.16)' : 'rgba(106,70,48,.26)'}" stroke-width="12" stroke-linecap="round"/>`
+    + `<path d="${curve(N)}" fill="none" stroke="${TH.dark ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.55)'}" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"/>`
+    + (reached > 0 ? `<path d="${curve(reached)}" fill="none" stroke="#5FAE45" stroke-width="12" stroke-linecap="round"/><path d="${curve(reached)}" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"/>` : '');
   $('progVal').textContent = `${LEVELS.filter((l, i) => isDone(i)).length}/${N}`;
   $('sndVal').textContent = save.snd ? 'вкл' : 'выкл';
 }
@@ -667,6 +688,10 @@ let tutorialFinger = -1;
 let G = {}; // geometry
 const TICK = 420; // at ×1; ×2 and ×3 divide it
 const speedMul = () => [1, 2, 3][save.spd] || 1;
+// once every squad has left the queues there is nothing to decide: finish fast
+const queuesEmpty = () => !!(st && lv && st.ptr.every((p, c) => p >= lv.cols[c].length));
+const runMul = () => queuesEmpty() ? Math.max(6, speedMul() * 3) : speedMul();
+let rushShown = false;
 
 function startLevel(i) {
   LI = i;
@@ -677,7 +702,7 @@ function startLevel(i) {
   st = L.makeState(lv);
   hist = []; extraUsed = false; ended = false;
   ants = []; crumbs = []; pending = new Map(); slotPop = []; colAnim = lv.cols.map(() => 0);
-  hintCol = -1; tutorialFinger = -1;
+  hintCol = -1; tutorialFinger = -1; rushShown = false;
   $('lvlNum').innerHTML = `Уровень ${i + 1}` + (src.tier ? '' : '') + (src.tier ? ` · <em class="tier t${src.tier}">${TIER_NAME[src.tier]}</em>` : '');
   $('lvlName').textContent = src.name;
   $('lvlName').style.fontSize = src.name.length > 16 ? '13px' : src.name.length > 11 ? '15px' : '';
@@ -739,7 +764,7 @@ function undo() {
   if (!hist.length) return;
   const h = hist.pop();
   st = h.s; extraUsed = h.extra;
-  ants = []; crumbs = []; pending = new Map(); ended = false; hintCol = -1;
+  ants = []; crumbs = []; pending = new Map(); ended = false; hintCol = -1; rushShown = queuesEmpty();
   $('over').hidden = true;
   layout(); updateTools(); sfx.tap();
 }
@@ -938,7 +963,7 @@ function makeWalk(pts, now, c, cells, back) {
   const cum = [0];
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
   const len = cum[cum.length - 1] || 1;
-  return { pts, cum, len, t0: now, dur: len / (190 * speedMul()) * 1000, c, cells, back, j: Math.random() * 6 };
+  return { pts, cum, len, t0: now, dur: len / (190 * runMul()) * 1000, c, cells, back, j: Math.random() * 6 };
 }
 function walkAt(a, d) {
   const { pts, cum } = a;
@@ -954,7 +979,8 @@ function frame(now) {
   raf = requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
   tickAcc += dt * 1000;
-  const T = TICK / speedMul();
+  const T = TICK / runMul();
+  if (!rushShown && queuesEmpty() && !ended && !L.won(st)) { rushShown = true; toast('Все отряды вышли — доедаем быстро'); sfx.rush(); }
   while (tickAcc >= T) { tickAcc -= T; if (!ended) tick(now); }
   // ants: arrive, bite, walk home by another path
   for (let k = 0; k < ants.length; k++) {
@@ -966,8 +992,9 @@ function frame(now) {
         clearCell(cell);
         if (n < 3) { const [cx, cy] = cellXY(cell); for (let q = 0; q < 2; q++) crumbs.push({ x: cx, y: cy, vx: (Math.random() - 0.5) * 120, vy: -Math.random() * 120, life: 0.5, c: col, s: Math.max(2, G.cell * 0.5) }); }
       });
-      chomp();
+      chomp(a.c);
       const h = makeWalk(a.pts.slice().reverse(), now, a.c, [], true);
+      h.carry = a.cells.length;
       h.dur *= 0.85;
       ants[k] = h;
     }
@@ -997,6 +1024,19 @@ function blitAnt(x, y, s, ang, ci, frame, empty) {
   }
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
   ctx.drawImage(spr, -spr.css / 2, -spr.css / 2, spr.css, spr.css);
+  ctx.restore();
+}
+// the eaten cube(s), held in the jaws and dragged home
+function drawCarried(x, y, ang, ci, n, antS) {
+  const col = lv.colors[ci];
+  const s = Math.max(4, Math.min(G.cell * 1.15, antS * 0.55));
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+  for (let k = 0; k < n; k++) {
+    const ox = antS * 0.48 + k * s * 0.85, oy = -s / 2 + (k ? -s * 0.35 : 0);
+    ctx.fillStyle = shadeC(col, -0.35); ctx.fillRect(ox - 0.5, oy - 0.5, s + 1, s + 1);
+    ctx.fillStyle = col; ctx.fillRect(ox, oy, s, s);
+    ctx.fillStyle = shadeC(col, 0.25); ctx.fillRect(ox, oy, s, Math.max(1, s * 0.22));
+  }
   ctx.restore();
 }
 function drawAnt(x, y, s, ang, col, phase, carry) {
@@ -1139,7 +1179,8 @@ function draw(now) {
     const p = Math.min(1, (now - a.t0) / a.dur);
     const [x, y, ang] = walkAt(a, p * a.len);
     ctx.globalAlpha = a.back && p > 0.85 ? (1 - p) / 0.15 : 1;
-    blitAnt(x, y, antS, ang, a.c, ((now / 70 + a.j) | 0) % 4, !a.back);
+    blitAnt(x, y, antS, ang, a.c, ((now / 70 + a.j) | 0) % 4, true);
+    if (a.back) drawCarried(x, y, ang, a.c, a.carry || 1, antS);
   }
   ctx.globalAlpha = 1;
   for (const c of crumbs) {
