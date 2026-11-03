@@ -1045,7 +1045,6 @@ function startLevel(i) {
   const intro = i === 0 && !isDone(0) ? 'start' : (mk && !(save.seen || {})[mk] ? mk : '');
   if (intro) { $('coachText').innerHTML = COACH[intro]; save.seen = Object.assign({}, save.seen, intro === 'start' ? {} : { [intro]: 1 }); persist(); }
   $('coach').hidden = !intro;
-  if (save.music && !intro) setTimeout(() => toast('♪ ' + TRACKS[i % TRACKS.length].title), 400);
   if (i === 0 && !isDone(0)) {
     if (src.sol && src.sol.length) tutorialFinger = src.sol[0];
   }
