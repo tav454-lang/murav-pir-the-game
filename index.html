@@ -128,7 +128,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     <div class="topbar">
       <button class="ibtn" id="backBtn" type="button" aria-label="К карте уровней"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <div class="ttl"><span id="lvlNum">Уровень 1</span><b id="lvlName">Вишня</b></div>
-      <button class="ibtn" id="speedBtn" type="button" aria-pressed="false" aria-label="Быстрые муравьи">×2</button>
+      <button class="ibtn" id="speedBtn" type="button" aria-pressed="false" aria-label="Скорость муравьёв">×1</button>
       <button class="ibtn" id="restartBtn" type="button" aria-label="Начать уровень заново"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.1-5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M19.5 3.5v4.5H15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
     <div id="stage">
@@ -492,7 +492,8 @@ let ants = [], crumbs = [], pending = new Map(), slotPop = [], colAnim = [];
 let hintCol = -1, hintUntil = 0, ended = false, tickAcc = 0, lastT = 0, raf = 0, idleSince = 0;
 let tutorialFinger = -1;
 let G = {}; // geometry
-const TICK = 115;
+const TICK = 230; // at ×1; ×2 and ×3 divide it
+const speedMul = () => [1, 2, 3][save.spd] || 1;
 
 function startLevel(i) {
   LI = i;
@@ -602,6 +603,8 @@ function updateTools() {
   $('slotBtn').disabled = extraUsed;
   $('slotBtn').querySelector('.n').textContent = extraUsed ? '0' : '1';
   $('speedBtn').setAttribute('aria-pressed', save.spd ? 'true' : 'false');
+  $('speedBtn').textContent = '×' + speedMul();
+  $('speedBtn').setAttribute('aria-label', 'Скорость муравьёв: ×' + speedMul() + '. Нажми, чтобы сменить');
 }
 let toastT = 0;
 function toast(msg) {
@@ -653,7 +656,7 @@ function tick(now) {
     const [tx, ty] = cellXY(e.cell);
     const sx = slotX(e.slot), sy = G.slotY - 6;
     const dist = Math.hypot(tx - sx, ty - sy);
-    const sp = (save.spd ? 1100 : 680);
+    const sp = 340 * speedMul();
     pending.set(e.cell, e.c);
     ants.push({ sx, sy, tx, ty: ty + G.cell * 0.25, t0: now, dur: dist / sp * 1000, c: e.c, cell: e.cell, back: false, j: Math.random() * 6 });
     if (e.done) setTimeout(() => sfx.done(), 120);
@@ -670,7 +673,7 @@ function frame(now) {
   raf = requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
   tickAcc += dt * 1000;
-  const T = TICK / (save.spd ? 2 : 1);
+  const T = TICK / speedMul();
   while (tickAcc >= T) { tickAcc -= T; if (!ended) tick(now); }
   // ants
   for (const a of ants) {
@@ -871,7 +874,7 @@ $('restartBtn').addEventListener('click', () => { if (st) startLevel(LI); });
 $('undoBtn').addEventListener('click', undo);
 $('hintBtn').addEventListener('click', hint);
 $('slotBtn').addEventListener('click', addSlot);
-$('speedBtn').addEventListener('click', () => { save.spd = save.spd ? 0 : 1; persist(); updateTools(); toast(save.spd ? 'Муравьи бегают вдвое быстрее' : 'Обычная скорость'); });
+$('speedBtn').addEventListener('click', () => { save.spd = ((save.spd | 0) + 1) % 3; persist(); updateTools(); toast(['Обычная скорость', 'Муравьи бегают вдвое быстрее', 'Муравьи бегают втрое быстрее'][save.spd]); });
 $('coachOk').addEventListener('click', () => { $('coach').hidden = true; });
 window.addEventListener('resize', () => { if (st && !$('game').hidden) layout(); else if (!$('map').hidden) buildMap(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) lastT = performance.now(); });
