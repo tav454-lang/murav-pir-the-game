@@ -599,6 +599,55 @@ function decoSVG(kind, x, y, s, T, seed) {
     }
     case 'puddle':
       return `<ellipse cx="${x}" cy="${y}" rx="${s * 1.9}" ry="${s * 0.8}" fill="${dk ? '#2B4A6B' : '#A9D8F2'}"/><ellipse cx="${x - s * 0.6}" cy="${y - s * 0.2}" rx="${s * 0.6}" ry="${s * 0.18}" fill="rgba(255,255,255,.55)"/>`;
+    case 'tree':
+      return `<rect x="${x - s * 0.25}" y="${y}" width="${s * 0.5}" height="${s * 1.6}" fill="${dk ? '#4A3628' : '#8A5A34'}"/><circle cx="${x}" cy="${y - s * 0.4}" r="${s * 1.5}" fill="${dk ? '#2F5A3C' : '#5FA544'}"/><circle cx="${x - s * 0.6}" cy="${y - s * 0.9}" r="${s * 0.8}" fill="${dk ? '#3F7A4E' : '#79BE57'}"/><circle cx="${x + s * 0.7}" cy="${y - s * 0.2}" r="${s * 0.25}" fill="#EF4438"/>`;
+    case 'pine':
+      return `<rect x="${x - s * 0.2}" y="${y + s * 1.2}" width="${s * 0.4}" height="${s * 0.7}" fill="${dk ? '#4A3628' : '#8A5A34'}"/><path d="M${x} ${y - s * 1.8}l${s * 1.1} ${s * 1.6}h${-s * 0.5}l${s * 0.9} ${s * 1.4}h${-s * 3}l${s * 0.9} ${-s * 1.4}h${-s * 0.5}z" fill="${dk ? '#244A33' : '#3E8A45'}"/>`;
+    case 'snowpine':
+      return `<path d="M${x} ${y - s * 1.8}l${s * 1.1} ${s * 1.6}h${-s * 0.5}l${s * 0.9} ${s * 1.4}h${-s * 3}l${s * 0.9} ${-s * 1.4}h${-s * 0.5}z" fill="${dk ? '#244A33' : '#3E8A45'}"/><path d="M${x} ${y - s * 1.8}l${s * 0.55} ${s * 0.8}h${-s * 1.1}z" fill="#fff"/><path d="M${x - s * 0.9} ${y + s * 1.2}h${s * 1.8}" stroke="#fff" stroke-width="${s * 0.25}" stroke-linecap="round"/>`;
+    case 'stump':
+      return `<rect x="${x - s * 0.7}" y="${y - s * 0.3}" width="${s * 1.4}" height="${s * 0.9}" fill="${dk ? '#4A3628' : '#9A6A40'}"/><ellipse cx="${x}" cy="${y - s * 0.3}" rx="${s * 0.7}" ry="${s * 0.3}" fill="${dk ? '#6B5240' : '#D9B07A'}"/>`;
+    case 'bed': {
+      let p = `<rect x="${x - s * 2.4}" y="${y - s * 0.6}" width="${s * 4.8}" height="${s * 1.2}" rx="${s * 0.5}" fill="${dk ? '#3A2A1E' : '#9A6A40'}"/>`;
+      for (let k = 0; k < 4; k++) p += `<path d="M${x - s * 1.8 + k * s * 1.2} ${y - s * 0.4}l${-s * 0.3} ${-s * 0.8}M${x - s * 1.8 + k * s * 1.2} ${y - s * 0.4}l${s * 0.3} ${-s * 0.8}" stroke="${dk ? '#3F7A4E' : '#5FB043'}" stroke-width="1.6" stroke-linecap="round"/>` + (seed % 2 ? `<circle cx="${x - s * 1.8 + k * s * 1.2}" cy="${y}" r="${s * 0.22}" fill="#FF8A1F"/>` : '');
+      return p;
+    }
+    case 'pond': {
+      let p = `<ellipse cx="${x}" cy="${y}" rx="${s * 4.4}" ry="${s * 2.1}" fill="${dk ? '#26476B' : '#8FCFF0'}"/><ellipse cx="${x}" cy="${y + s * 0.2}" rx="${s * 3.7}" ry="${s * 1.6}" fill="${dk ? '#2B5580' : '#A9DCF5'}"/>`;
+      for (let k = 0; k < 3; k++) { const lx = x + (srand(seed, k) - 0.5) * s * 5, ly = y + (srand(seed, k + 5) - 0.5) * s * 1.8; p += `<path d="M${lx} ${ly}m${s * 0.6} 0a${s * 0.6} ${s * 0.45} 0 1 1 -0.2 -0.3z" fill="${dk ? '#3F7A4E' : '#5FB043'}"/>`; }
+      if (seed % 2) p += `<circle cx="${x + s * 1.2}" cy="${y - s * 0.3}" r="${s * 0.3}" fill="#FF92BD"/>`;
+      return p + `<path d="M${x - s * 4.2} ${y + s * 0.6}v${-s * 2.2}M${x - s * 3.7} ${y + s * 0.8}v${-s * 2.6}" stroke="${dk ? '#3F7A4E' : '#6E9F3A'}" stroke-width="1.6"/><ellipse cx="${x - s * 3.7}" cy="${y - s * 1.9}" rx="${s * 0.18}" ry="${s * 0.5}" fill="#8A5A34"/>`;
+    }
+    case 'blanket': {
+      let p = `<g transform="rotate(${(seed * 13) % 24 - 12} ${x} ${y})"><rect x="${x - s * 2.6}" y="${y - s * 1.8}" width="${s * 5.2}" height="${s * 3.6}" fill="#FFF8EE"/>`;
+      for (let k = 0; k < 4; k++) p += `<rect x="${x - s * 2.6 + k * s * 1.3}" y="${y - s * 1.8}" width="${s * 0.65}" height="${s * 3.6}" fill="rgba(226,72,58,.35)"/><rect x="${x - s * 2.6}" y="${y - s * 1.8 + k * s * 0.9}" width="${s * 5.2}" height="${s * 0.45}" fill="rgba(226,72,58,.3)"/>`;
+      return p + `<circle cx="${x - s}" cy="${y}" r="${s * 0.7}" fill="#fff" stroke="#ddd"/><circle cx="${x - s}" cy="${y}" r="${s * 0.35}" fill="#EF4438"/><rect x="${x + s * 0.5}" y="${y - s * 0.6}" width="${s * 1.4}" height="${s * 1}" rx="${s * 0.2}" fill="#C9783A"/><path d="M${x + s * 0.6} ${y - s * 0.6}q${s * 0.6} ${-s} ${s * 1.2} 0" stroke="#9A5B2C" stroke-width="1.4" fill="none"/></g>`;
+    }
+    case 'shell':
+      return `<path d="M${x - s} ${y + s * 0.5}a${s} ${s} 0 0 1 ${s * 2} 0z" fill="#FFC9B0"/><path d="M${x} ${y + s * 0.5}v${-s}M${x - s * 0.5} ${y + s * 0.5}l${s * 0.2} ${-s * 0.8}M${x + s * 0.5} ${y + s * 0.5}l${-s * 0.2} ${-s * 0.8}" stroke="#E79C80" stroke-width="1"/>`;
+    case 'star': {
+      let d = '';
+      for (let k = 0; k < 10; k++) { const r = k % 2 ? s * 0.45 : s * 1.1, t = -Math.PI / 2 + k * Math.PI / 5; d += (k ? 'L' : 'M') + (x + r * Math.cos(t)).toFixed(1) + ' ' + (y + r * Math.sin(t)).toFixed(1); }
+      return `<path d="${d}z" fill="#FF8A5A"/>`;
+    }
+    case 'sand':
+      return `<ellipse cx="${x}" cy="${y}" rx="${s * 3}" ry="${s * 1.1}" fill="${dk ? 'rgba(200,170,120,.25)' : 'rgba(246,218,160,.9)'}"/>`;
+    case 'sunflower':
+      return `<path d="M${x} ${y}v${s * 2.4}" stroke="${dk ? '#3F7A4E' : '#5E9C3C'}" stroke-width="1.8"/><path d="M${x} ${y + s * 1.4}q${s * 0.8} ${-s * 0.4} ${s * 1.1} ${-s * 0.1}" stroke="${dk ? '#3F7A4E' : '#5E9C3C'}" stroke-width="1.6" fill="none"/><circle cx="${x}" cy="${y}" r="${s * 0.95}" fill="#FFC21F"/><circle cx="${x}" cy="${y}" r="${s * 0.5}" fill="#7A4A22"/>`;
+    case 'hive':
+      return `<path d="M${x} ${y - s * 1.4}v${s * 0.4}" stroke="#8A5A34" stroke-width="1.4"/><ellipse cx="${x}" cy="${y}" rx="${s}" ry="${s * 1.1}" fill="#F5C04A"/><path d="M${x - s * 0.95} ${y - s * 0.3}h${s * 1.9}M${x - s * 0.95} ${y + s * 0.3}h${s * 1.9}" stroke="#D99A2B" stroke-width="1.2"/><circle cx="${x}" cy="${y + s * 0.55}" r="${s * 0.22}" fill="#5A3D28"/><circle cx="${x + s * 1.5}" cy="${y - s * 0.8}" r="${s * 0.25}" fill="#FFD23F" stroke="#333" stroke-width=".8"/>`;
+    case 'snowman':
+      return `<circle cx="${x}" cy="${y + s * 0.6}" r="${s * 0.95}" fill="#fff" stroke="#D5E4EE"/><circle cx="${x}" cy="${y - s * 0.6}" r="${s * 0.65}" fill="#fff" stroke="#D5E4EE"/><path d="M${x} ${y - s * 0.6}l${s * 0.6} ${s * 0.12}l${-s * 0.6} ${s * 0.12}z" fill="#FF8A1F"/><rect x="${x - s * 0.5}" y="${y - s * 1.55}" width="${s}" height="${s * 0.45}" fill="#333"/>`;
+    case 'snow':
+      return `<ellipse cx="${x}" cy="${y}" rx="${s * 3.2}" ry="${s * 1.2}" fill="${dk ? 'rgba(220,235,255,.12)' : 'rgba(255,255,255,.85)'}"/>`;
+    case 'lolly':
+      return `<path d="M${x} ${y}v${s * 2.4}" stroke="#fff" stroke-width="${s * 0.35}"/><circle cx="${x}" cy="${y}" r="${s * 1.1}" fill="${['#FF92BD', '#93D6F7', '#B8E86A', '#FFD23F'][seed % 4]}"/><path d="M${x - s * 0.6} ${y}a${s * 0.6} ${s * 0.6} 0 1 1 ${s * 0.6} ${s * 0.6}" stroke="#fff" stroke-width="1.6" fill="none"/>`;
+    case 'gum':
+      return `<path d="M${x - s * 0.9} ${y + s * 0.6}q${s * 0.9} ${-s * 2.4} ${s * 1.8} 0z" fill="${['#EF4438', '#63C04A', '#FF8A1F', '#8A4BC4'][seed % 4]}"/><circle cx="${x - s * 0.25}" cy="${y - s * 0.3}" r="${s * 0.18}" fill="rgba(255,255,255,.7)"/>`;
+    case 'cane':
+      return `<path d="M${x} ${y + s * 2}v${-s * 2.2}a${s * 0.7} ${s * 0.7} 0 0 1 ${s * 1.4} 0" stroke="#fff" stroke-width="${s * 0.45}" fill="none" stroke-linecap="round"/><path d="M${x} ${y + s * 2}v${-s * 2.2}a${s * 0.7} ${s * 0.7} 0 0 1 ${s * 1.4} 0" stroke="#EF4438" stroke-width="${s * 0.45}" fill="none" stroke-dasharray="${s * 0.4} ${s * 0.4}" stroke-linecap="butt"/>`;
+    case 'cloud':
+      return `<g opacity="${dk ? .12 : .75}"><ellipse cx="${x}" cy="${y}" rx="${s * 2.2}" ry="${s * 0.9}" fill="#fff"/><circle cx="${x - s * 0.7}" cy="${y - s * 0.5}" r="${s * 0.9}" fill="#fff"/><circle cx="${x + s * 0.5}" cy="${y - s * 0.7}" r="${s * 1.1}" fill="#fff"/></g>`;
     case 'leaf':
       return `<path d="M${x - s} ${y}q${s} ${-s * 1.3} ${s * 2} 0q${-s} ${s * 1.3} ${-s * 2} 0z" fill="${dk ? '#3F7A4E' : '#7DB956'}" transform="rotate(${(seed * 47) % 360} ${x} ${y})"/>`;
   }
@@ -609,12 +658,19 @@ function buildMap() {
   const W = pathEl.clientWidth || 340;
   const pts = [];
   const span = Math.min(W * 0.34, 125);
-  let y = 10, xPrev = W / 2;
+  let y = 10, xPrev = W / 2, side = 1, sameRun = 0;
   for (let i = 0; i < N; i++) {
-    // wander left and right without a fixed rhythm
-    let x = i === 0 ? W / 2 : xPrev + (srand(i, 1) - 0.5) * span * 1.6;
-    if (Math.abs(x - xPrev) < 34) x = xPrev + (x >= xPrev ? 34 : -34);
-    x = Math.max(W / 2 - span, Math.min(W / 2 + span, x));
+    // swing from side to side, never more than two steps on the same side
+    let x = W / 2;
+    if (i > 0) {
+      const flip = sameRun >= 2 || srand(i, 1) < 0.68;
+      side = flip ? -side : side;
+      sameRun = flip ? 1 : sameRun + 1;
+      const amp = srand(i, 7) < 0.14 ? span * 0.15 : span * (0.35 + 0.65 * srand(i, 8));
+      x = W / 2 + side * amp;
+      if (Math.abs(x - xPrev) < 30) x = xPrev + (x >= xPrev ? 30 : -30);
+      x = Math.max(W / 2 - span, Math.min(W / 2 + span, x));
+    }
     xPrev = x;
     const n = document.createElement('button');
     n.type = 'button';
@@ -642,21 +698,81 @@ function buildMap() {
     return d;
   };
   const reached = Math.min(N - 1, firstOpen());
-  // scenery on the far side of each bend
-  const kinds = ['flower', 'tuft', 'stone', 'flower', 'shroom', 'bush', 'hill', 'crumbs', 'leaf', 'flower', 'bush', 'puddle', 'tuft'];
+  // scenery: the land changes every 40 levels (just the look, no separate worlds)
+  const BIOMES = [
+    { tint: null,                      props: ['flower', 'tuft', 'stone', 'flower', 'shroom', 'bush', 'hill', 'crumbs', 'leaf', 'tuft'], big: 'hill' },
+    { tint: 'rgba(170,120,70,.10)',     props: ['bed', 'bed', 'tuft', 'flower', 'stone', 'leaf', 'crumbs'], big: 'bed' },
+    { tint: 'rgba(120,190,230,.12)',    props: ['tuft', 'leaf', 'stone', 'flower', 'bush'], big: 'pond' },
+    { tint: 'rgba(40,110,50,.12)',      props: ['tree', 'pine', 'stump', 'shroom', 'tuft', 'leaf', 'pine'], big: 'tree' },
+    { tint: 'rgba(255,255,255,.18)',    props: ['crumbs', 'flower', 'tuft', 'bush', 'crumbs'], big: 'blanket' },
+    { tint: 'rgba(240,205,140,.32)',    props: ['shell', 'star', 'sand', 'stone', 'shell'], big: 'pond' },
+    { tint: 'rgba(255,220,90,.12)',     props: ['sunflower', 'flower', 'hive', 'sunflower', 'tuft', 'flower'], big: 'hive' },
+    { tint: 'rgba(255,255,255,.45)',    props: ['snowpine', 'snow', 'snowman', 'stone', 'snowpine'], big: 'snowman' },
+    { tint: 'rgba(255,170,205,.18)',    props: ['lolly', 'gum', 'cane', 'gum', 'lolly'], big: 'lolly' },
+    { tint: 'rgba(60,140,60,.10)',      props: ['tree', 'flower', 'bush', 'puddle', 'hill', 'tuft'], big: 'pond' },
+  ];
+  const biomeOf = i => BIOMES[Math.floor(i / 40) % BIOMES.length];
   let deco = '';
+  // soft colour washes for each stretch, blended at the seams
+  let defs = '<defs>';
+  for (let s = 0; s * 40 < N; s++) {
+    const bm = BIOMES[s % BIOMES.length];
+    if (!bm.tint || TH.dark) continue;
+    const y0 = pts[s * 40][1] - 60, y1 = pts[Math.min(N - 1, s * 40 + 39)][1] + 60;
+    defs += `<linearGradient id="bg${s}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${bm.tint}" stop-opacity="0"/><stop offset=".08" stop-color="${bm.tint}"/><stop offset=".92" stop-color="${bm.tint}"/><stop offset="1" stop-color="${bm.tint}" stop-opacity="0"/></linearGradient>`;
+    deco += `<rect x="-20" y="${y0}" width="${W + 40}" height="${y1 - y0}" fill="url(#bg${s})"/>`;
+  }
+  defs += '</defs>';
   for (let i = 0; i < N; i++) {
     const [x, yy] = pts[i];
+    const bm = biomeOf(i);
+    const side = x > W / 2 ? -1 : 1;
+    // a bigger landmark now and then
+    if (i % 5 === 2) {
+      const lx = Math.max(40, Math.min(W - 40, x + side * (W * 0.36)));
+      deco += decoSVG(bm.big, lx, yy + 10, 10 + srand(i, 50) * 4, TH, i);
+    }
+    if (i % 9 === 4 && !TH.dark) deco += decoSVG('cloud', srand(i, 60) * W, yy - 30, 7 + srand(i, 61) * 4, TH, i);
     const cnt = 2 + (srand(i, 5) > 0.4) + (srand(i, 6) > 0.75);
     for (let k = 0; k < cnt; k++) {
-      const side = x > W / 2 ? -1 : 1;
       let dx = x + side * (50 + srand(i, 10 + k) * (W * 0.4));
       dx = Math.max(14, Math.min(W - 14, dx));
       const dy = yy - 20 + srand(i, 20 + k) * 80;
-      const kind = kinds[Math.floor(srand(i, 30 + k) * kinds.length)];
-      deco += decoSVG(kind, dx, dy, 6 + srand(i, 40 + k) * 4, TH, i * 7 + k);
+      const kind = bm.props[Math.floor(srand(i, 30 + k) * bm.props.length)];
+      deco += decoSVG(kind, dx, dy, 7 + srand(i, 40 + k) * 5, TH, i * 7 + k);
     }
   }
+  // the colony at the very start
+  deco = decoSVG('hill', W * 0.2, 40, 14, TH, 1) + decoSVG('hill', W * 0.82, 70, 9, TH, 2) + deco;
+  // soft patches of ground and big landmarks so the journey has places in it
+  let ground = '';
+  for (let i = 0; i < N; i += 3) {
+    const [, yy] = pts[i];
+    const cx = srand(i, 50) * W, rx = 80 + srand(i, 51) * 120, ry = 60 + srand(i, 52) * 90;
+    ground += `<ellipse cx="${cx}" cy="${yy + 40}" rx="${rx}" ry="${ry}" fill="${TH.dark ? 'rgba(255,255,255,.025)' : (i / 3) % 2 ? 'rgba(255,240,170,.22)' : 'rgba(255,255,255,.18)'}"/>`;
+  }
+  for (let i = 4; i < N; i += 8) {
+    const [x, yy] = pts[i];
+    const side = x > W / 2 ? -1 : 1;
+    const lx = Math.max(40, Math.min(W - 40, x + side * (W * 0.3 + srand(i, 60) * 30)));
+    const ly = yy + 30;
+    const pick = Math.floor(srand(i, 61) * 4);
+    if (pick === 0) { // tree
+      deco += `<rect x="${lx - 3}" y="${ly}" width="6" height="16" rx="2" fill="${TH.dark ? '#4A3628' : '#8A5A34'}"/><circle cx="${lx}" cy="${ly - 6}" r="17" fill="${TH.dark ? '#2F5A3C' : '#5FA046'}"/><circle cx="${lx - 9}" cy="${ly - 1}" r="11" fill="${TH.dark ? '#2A5035' : '#529239'}"/><circle cx="${lx + 8}" cy="${ly - 13}" r="9" fill="${TH.dark ? '#3F7A4E' : '#74B85A'}"/><circle cx="${lx + 6}" cy="${ly - 4}" r="2.4" fill="#EF4438"/><circle cx="${lx - 7}" cy="${ly - 10}" r="2.4" fill="#EF4438"/>`;
+    } else if (pick === 1) { // pond with a lily pad
+      deco += `<ellipse cx="${lx}" cy="${ly}" rx="30" ry="14" fill="${TH.dark ? '#2B4A6B' : '#8FCDEB'}"/><ellipse cx="${lx - 8}" cy="${ly - 3}" rx="10" ry="2.5" fill="rgba(255,255,255,.5)"/><circle cx="${lx + 10}" cy="${ly + 3}" r="5" fill="${TH.dark ? '#3F7A4E' : '#5FA046'}"/><circle cx="${lx + 12}" cy="${ly + 1}" r="1.6" fill="#FF92BD"/>`;
+    } else if (pick === 2) { // big anthill
+      deco += `<path d="M${lx - 26} ${ly + 10}q26 -34 52 0z" fill="${TH.dark ? '#5B4636' : '#B98D5E'}"/><path d="M${lx - 16} ${ly + 2}q16 -18 32 0" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2"/><ellipse cx="${lx}" cy="${ly - 3}" rx="5" ry="3" fill="${TH.dark ? '#241911' : '#5A3D28'}"/>`;
+    } else { // picnic basket
+      deco += `<path d="M${lx - 14} ${ly - 6}q14 -18 28 0" fill="none" stroke="${TH.dark ? '#8A6A4B' : '#9A5B2C'}" stroke-width="3"/><rect x="${lx - 17}" y="${ly - 7}" width="34" height="18" rx="4" fill="${TH.dark ? '#8A6A4B' : '#C9783A'}"/><path d="M${lx - 17} ${ly}h34M${lx - 17} ${ly + 5}h34" stroke="rgba(0,0,0,.15)" stroke-width="1.5"/><rect x="${lx - 17}" y="${ly - 9}" width="34" height="5" fill="#EF4438"/><rect x="${lx - 10}" y="${ly - 9}" width="5" height="5" fill="#fff"/><rect x="${lx + 2}" y="${ly - 9}" width="5" height="5" fill="#fff"/>`;
+    }
+  }
+  for (let i = 24; i < N; i += 25) { // signpost every 25 levels
+    const [x, yy] = pts[i];
+    const sx = x > W / 2 ? x - 62 : x + 62, sy = yy - 4;
+    deco += `<rect x="${sx - 2}" y="${sy - 6}" width="4" height="28" fill="${TH.dark ? '#6B5240' : '#8A5A34'}"/><rect x="${sx - 22}" y="${sy - 16}" width="44" height="18" rx="4" fill="${TH.dark ? '#8A6A4B' : '#E8B98F'}" stroke="${TH.dark ? '#5B4636' : '#9A5B2C'}" stroke-width="2"/><text x="${sx}" y="${sy - 3}" text-anchor="middle" font-family="Rubik Mono One, Arial Black, sans-serif" font-size="10" fill="${TH.dark ? '#ECEAF4' : '#4A2C1E'}">${i + 1}</text>`;
+  }
+  deco = ground + deco;
   // a few ants marching along the road towards the next level
   const trailFrom = Math.max(0, reached - 4), trailTo = Math.max(reached, 1);
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -670,7 +786,7 @@ function buildMap() {
   svg.setAttribute('viewBox', `0 0 ${W} ${y + 10}`);
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.style.width = W + 'px'; svg.style.height = (y + 10) + 'px';
-  svg.innerHTML = deco
+  svg.innerHTML = defs + deco
     + `<path d="${curve(0, N)}" fill="none" stroke="${TH.dark ? 'rgba(255,255,255,.14)' : 'rgba(106,70,48,.22)'}" stroke-width="5" stroke-linecap="round"/>`
     + (reached > 0 ? `<path d="${curve(0, reached)}" fill="none" stroke="#5FAE45" stroke-width="5" stroke-linecap="round"/>` : '')
     + `<path id="antTrail" d="${curve(trailFrom, trailTo)}" fill="none" stroke="none"/>`
